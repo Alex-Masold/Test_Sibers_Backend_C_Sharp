@@ -1,0 +1,20 @@
+# This is a generated file. Not intended for manual editing.
+services:
+  api:
+    build:
+      context: "/home/kob/Documents/Projects/SibersTestToBackend/sibers-test-backend"
+      dockerfile: "Api/Dockerfile"
+      target: "base"
+    command: []
+    entrypoint:
+    - "dotnet"
+    - "/app/bin/Debug/net9.0/Api.dll"
+    environment:
+      DOTNET_USE_POLLING_FILE_WATCHER: "true"
+    image: "sibers-api:dev"
+    ports: []
+    volumes:
+    - "/home/kob/Documents/Projects/SibersTestToBackend/sibers-test-backend/Api:/app:rw"
+    - "/home/kob/Documents/Projects/SibersTestToBackend/sibers-test-backend:/src:rw"
+    - "/home/kob/.nuget/packages:/home/app/.nuget/packages"
+    working_dir: "/app"

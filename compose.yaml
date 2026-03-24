@@ -1,0 +1,39 @@
+﻿services:
+  api:
+    image: sibers-api
+    build:
+      context: .
+      dockerfile: Api/Dockerfile
+    container_name: sibers_backend
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - ASPNETCORE_KESTREL__CERTIFICATES__DEFAULT__PASSWORD=SibersPassword123
+      - ASPNETCORE_KESTREL__CERTIFICATES__DEFAULT__PATH=/https/sibers-api.pfx
+      - ConnectionStrings__Redis=redis:6379
+      - ConnectionStrings__Sqlite=Data Source=/app/data/sibers.db
+      - Client__WebVue=https://localhost:5173
+    volumes:
+      - sibers_data:/app/data       
+      - sibers_uploads:/app/Uploads 
+      # for windows
+      #- ~/.aspnet/https:/https:ro
+      # for linux
+      - ${HOME}/.aspnet/https:/https:ro
+    depends_on:
+      - redis
+  redis:
+    image: redis:alpine
+    container_name: sibers_redis
+    ports:
+      - "6379:6379"
+    restart: always
+    volumes:
+      - sibers_redis_data:/data
+volumes:
+  sibers_data:
+  sibers_uploads:
+  sibers_redis_data:

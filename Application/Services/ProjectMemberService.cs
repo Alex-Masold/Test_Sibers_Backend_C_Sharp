@@ -76,10 +76,7 @@ public class ProjectMemberService(
             var nonExistingIds = distinctIdList
                 .Where(id => !existingEmployeeId.Contains(id))
                 .ToList();
-            throw new NotFoundException(
-                nameof(Employee),
-                $"Employee with id [{string.Join(", ", nonExistingIds)}] not exist"
-            );
+            throw new NotFoundException(nameof(Employee), nonExistingIds);
         }
 
         return existingEmployeeId;
@@ -105,37 +102,10 @@ public class ProjectMemberService(
         {
             var existingId = existingProjects.Select(p => p.Id).ToList();
             var nonExistingIds = distinctIdList.Where(id => !existingId.Contains(id)).ToList();
-            throw new NotFoundException(
-                nameof(Project),
-                [string.Join(", ", nonExistingIds)] 
-            );
+            throw new NotFoundException(nameof(Project), nonExistingIds);
         }
 
         return existingProjects;
-    }
-
-    private async Task<int> DeleteMember(int memberId, CancellationToken ct = default)
-    {
-        var deleted = await memberStore.DeleteAsync(memberId, ct);
-
-        if (deleted == 0)
-            throw new NotFoundException(nameof(ProjectMember), memberId);
-
-        return deleted;
-    }
-
-    private async Task<int> DeleteMember(
-        IReadOnlyCollection<int> idList,
-        CancellationToken ct = default
-    )
-    {
-        var distinctIdList = idList.Distinct().ToList();
-
-        var deleted = await memberStore.DeleteAsync(idList, ct);
-
-        if (deleted != distinctIdList.Count)
-            throw new NotFoundException(nameof(ProjectMember), "Members does not exist");
-        return deleted;
     }
 
     public async Task<(
@@ -250,12 +220,14 @@ public class ProjectMemberService(
 
         if (userService.IsDirector)
         {
-            return await DeleteMember(member.Id, ct);
+            return await memberStore.DeleteAsync(member.Id, ct);
+
         }
 
         accessValidator.EnsureDeletePermission(project);
 
-        return await DeleteMember(member.Id, ct);
+        return await memberStore.DeleteAsync(member.Id, ct);
+
     }
 
     public async Task<int> DeleteMembersByIdsAsync(
@@ -263,7 +235,9 @@ public class ProjectMemberService(
         CancellationToken ct = default
     )
     {
-        var members = await GetMembers(idList, ct);
+        var distinctIdList = idList.Distinct().ToList();
+
+        var members = await GetMembers(distinctIdList, ct);
         var projectIds = members.Select(m => m.ProjectId).Distinct().ToList();
         var employeeIds = members.Select(m => m.EmployeeId).Distinct().ToList();
 
@@ -272,7 +246,7 @@ public class ProjectMemberService(
 
         if (userService.IsDirector)
         {
-            return await DeleteMember(idList, ct);
+            return await memberStore.DeleteAsync(distinctIdList, ct);
         }
 
         foreach (var project in projects)
@@ -280,6 +254,6 @@ public class ProjectMemberService(
             accessValidator.EnsureDeletePermission(project);
         }
 
-        return await DeleteMember(idList, ct);
+        return await memberStore.DeleteAsync(distinctIdList, ct);
     }
 }
