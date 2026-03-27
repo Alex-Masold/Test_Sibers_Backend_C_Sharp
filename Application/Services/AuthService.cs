@@ -11,7 +11,8 @@ public class AuthService(
     IEmployeeStore employeeStore,
     IRefreshTokenStore refreshTokenStore,
     ITokenService tokenService,
-    IValidator<LoginDto> loginValidator)
+    IValidator<LoginDto> loginValidator
+)
 {
     private async Task<Employee> GetEmployee(int employeeId, CancellationToken ct = default)
     {
@@ -31,7 +32,7 @@ public class AuthService(
 
     private async Task<int> GetEmployeeId(string refreshToken, CancellationToken ct = default)
     {
-        var employeeId = await refreshTokenStore.GetUserId(refreshToken, ct);
+        var employeeId = await refreshTokenStore.GetUserIdAsync(refreshToken, ct);
         if (!employeeId.HasValue)
             throw new AuthenticationException("Refresh token not found or expired");
         return employeeId.Value;
@@ -45,7 +46,7 @@ public class AuthService(
         var validationResult = await loginValidator.ValidateAsync(dto, ct);
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
-        
+
         var employee = await GetEmployee(dto.Email, ct);
 
         // await refreshTokenStore.Delete(employee.Id, ct);
@@ -53,7 +54,7 @@ public class AuthService(
         var accessToken = tokenService.GenerateAccessToken(employee);
         var refreshToken = tokenService.GenerateRefreshToken();
 
-        await refreshTokenStore.Save(refreshToken, employee.Id, ct);
+        await refreshTokenStore.SaveAsync(refreshToken, employee.Id, ct);
 
         return (accessToken, refreshToken);
     }
@@ -66,24 +67,24 @@ public class AuthService(
         var employeeId = await GetEmployeeId(refreshToken, ct);
         var employee = await GetEmployee(employeeId, ct);
 
-        await refreshTokenStore.Delete(refreshToken, ct);
+        await refreshTokenStore.DeleteAsync(refreshToken, ct);
 
         var newAccessToken = tokenService.GenerateAccessToken(employee);
         var newRefreshToken = tokenService.GenerateRefreshToken();
 
-        await refreshTokenStore.Save(newRefreshToken, employeeId, ct);
+        await refreshTokenStore.SaveAsync(newRefreshToken, employeeId, ct);
         return (newAccessToken, newRefreshToken);
     }
 
     public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)
     {
-        await refreshTokenStore.Delete(refreshToken, ct);
+        await refreshTokenStore.DeleteAsync(refreshToken, ct);
     }
 
     public async Task LogoutAllAsync(string refreshToken, CancellationToken ct = default)
     {
         var userId = await GetEmployeeId(refreshToken, ct);
 
-        await refreshTokenStore.Delete(userId, ct);
+        await refreshTokenStore.DeleteAsync(userId, ct);
     }
 }

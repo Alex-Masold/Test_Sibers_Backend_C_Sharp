@@ -35,15 +35,9 @@ public interface IProjectMemberStore
         CancellationToken ct = default
     );
 
-    ProjectMember Create(
-        ProjectMember projectMember,
-        CancellationToken cancellationToken = default
-    );
+    ProjectMember Create(ProjectMember projectMember);
 
-    void CreateRange(
-        IReadOnlyCollection<ProjectMember> projectMembers,
-        CancellationToken cancellationToken = default
-    );
+    void CreateRange(IReadOnlyCollection<ProjectMember> projectMembers);
 
     Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<int> DeleteAsync(

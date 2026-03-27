@@ -52,7 +52,7 @@ public class EmployeeServiceTests
         };
 
         _refreshTokenStoreMock
-            .Setup(x => x.GetUserId(refreshToken, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetUserIdAsync(refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employeeId);
 
         _employeeStoreMock
@@ -71,7 +71,7 @@ public class EmployeeServiceTests
         const string invalidToken = "invalid_or_expired_token";
 
         _refreshTokenStoreMock
-            .Setup(x => x.GetUserId(invalidToken, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetUserIdAsync(invalidToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync((int?)null);
 
         await Assert.ThrowsAsync<AuthenticationException>(() => _service.GetMeAsync(invalidToken));

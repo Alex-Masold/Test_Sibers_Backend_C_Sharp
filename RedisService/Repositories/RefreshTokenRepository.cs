@@ -13,7 +13,11 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
 
     private static RedisKey UserTokensKey(int userId) => $"userId_token:{userId}";
 
-    public async Task Save(string token, int userId, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(
+        string token,
+        int userId,
+        CancellationToken cancellationToken = default
+    )
     {
         var tokenKey = TokenKey(token);
         var userKey = UserTokensKey(userId);
@@ -26,10 +30,13 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
 
         _ = transaction.KeyExpireAsync(userKey, TokenTTL);
 
-       await transaction.ExecuteAsync();
+        await transaction.ExecuteAsync();
     }
 
-    public async Task<int?> GetUserId(string token, CancellationToken cancellationToken = default)
+    public async Task<int?> GetUserIdAsync(
+        string token,
+        CancellationToken cancellationToken = default
+    )
     {
         var value = await db.StringGetAsync(TokenKey(token));
         if (value.HasValue && int.TryParse(value, out var id))
@@ -38,11 +45,11 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
         return null;
     }
 
-    public async Task Delete(string token, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string token, CancellationToken cancellationToken = default)
     {
         var tokenKey = TokenKey(token);
 
-        var userId = await GetUserId(token, cancellationToken);
+        var userId = await GetUserIdAsync(token, cancellationToken);
         var userKey = UserTokensKey(userId.Value);
         if (!userId.HasValue)
         {
@@ -58,9 +65,9 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
         _ = transaction.SetRemoveAsync(userKey, token);
 
         await transaction.ExecuteAsync();
-        }
+    }
 
-    public async Task Delete(int userId, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(int userId, CancellationToken cancellationToken = default)
     {
         var userKey = UserTokensKey(userId);
 
@@ -78,10 +85,10 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
         _ = transaction.KeyDeleteAsync(keys);
         _ = transaction.KeyDeleteAsync(userKey);
 
-       await transaction.ExecuteAsync();
+        await transaction.ExecuteAsync();
     }
 
-    public async Task Delete(
+    public async Task DeleteAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     )

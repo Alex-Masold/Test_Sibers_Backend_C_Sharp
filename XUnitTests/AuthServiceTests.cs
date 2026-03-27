@@ -60,7 +60,7 @@ public class AuthServiceTests
         Assert.Equal(expectedRefresh, refreshToken);
 
         _refreshTokenStoreMock.Verify(
-            x => x.Save(expectedRefresh, employee.Id, It.IsAny<CancellationToken>()),
+            x => x.SaveAsync(expectedRefresh, employee.Id, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }
@@ -79,7 +79,7 @@ public class AuthServiceTests
         await Assert.ThrowsAsync<AuthenticationException>(() => _authService.LoginAsync(loginDto));
 
         _refreshTokenStoreMock.Verify(
-            x => x.Save(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            x => x.SaveAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never
         );
     }
@@ -100,7 +100,7 @@ public class AuthServiceTests
         };
 
         _refreshTokenStoreMock
-            .Setup(x => x.GetUserId(refreshToken, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetUserIdAsync(refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employeeId);
 
         _employeeStoreMock
@@ -120,7 +120,7 @@ public class AuthServiceTests
         const string refreshToken = "expired_token";
 
         _refreshTokenStoreMock
-            .Setup((x => x.GetUserId(refreshToken, It.IsAny<CancellationToken>())))
+            .Setup((x => x.GetUserIdAsync(refreshToken, It.IsAny<CancellationToken>())))
             .ReturnsAsync((int?)null);
 
         await Assert.ThrowsAsync<AccessDeniedException>(() =>
@@ -135,7 +135,7 @@ public class AuthServiceTests
         const string refreshToken = "valid_token";
 
         _refreshTokenStoreMock
-            .Setup(x => x.GetUserId(refreshToken, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetUserIdAsync(refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(employeeId);
 
         _employeeStoreMock
@@ -153,7 +153,7 @@ public class AuthServiceTests
         await _authService.LogoutAsync(refreshToken);
 
         _refreshTokenStoreMock.Verify(
-            x => x.Delete(refreshToken, It.IsAny<CancellationToken>()),
+            x => x.DeleteAsync(refreshToken, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }

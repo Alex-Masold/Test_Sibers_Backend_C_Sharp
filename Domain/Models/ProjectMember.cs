@@ -5,9 +5,8 @@ namespace Domain.Models;
 public class ProjectMember : Entity
 {
     public required int ProjectId { get; set; }
-    public Project Project { get; set; } = null!;
+    public required Project Project { get; init; }
 
     public required int EmployeeId { get; set; }
-    public Employee Employee { get; set; } = null!;
+    public required Employee Employee { get; init; }
 }
-

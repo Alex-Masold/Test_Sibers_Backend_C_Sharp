@@ -152,7 +152,7 @@ public class ProjectMemberService(
 
         var entity = dto.ToEntity();
 
-        var createdMember = memberStore.Create(entity, ct);
+        var createdMember = memberStore.Create(entity);
         await unitOfWork.SaveChangesAsync(ct);
 
         await memberStore.LoadEmployeeAsync(createdMember, ct);
@@ -199,10 +199,11 @@ public class ProjectMemberService(
 
         var entities = dtos.Select(d => d.ToEntity()).ToArray();
 
-        memberStore.CreateRange(entities, ct);
+        memberStore.CreateRange(entities);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var createdMembers = await memberStore.GetRangeByIdsAsync(, ct);
+        var createdIds = entities.Select(e => e.Id).ToList();
+        var createdMembers = await memberStore.GetRangeByIdsAsync(createdIds, ct);
 
         return createdMembers.Select(ProjectMemberReadDto.From).ToList();
     }
@@ -221,13 +222,11 @@ public class ProjectMemberService(
         if (userService.IsDirector)
         {
             return await memberStore.DeleteAsync(member.Id, ct);
-
         }
 
         accessValidator.EnsureDeletePermission(project);
 
         return await memberStore.DeleteAsync(member.Id, ct);
-
     }
 
     public async Task<int> DeleteMembersByIdsAsync(

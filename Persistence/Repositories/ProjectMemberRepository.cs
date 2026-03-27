@@ -120,16 +120,13 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
         return (items, totalCount);
     }
 
-    public ProjectMember Create(ProjectMember member, CancellationToken cancellationToken = default)
+    public ProjectMember Create(ProjectMember member)
     {
         var createdmember = context.ProjectMembers.Add(member);
         return createdmember.Entity;
     }
 
-    public void CreateRange(
-        IReadOnlyCollection<ProjectMember> projectMembers,
-        CancellationToken cancellationToken = default
-    )
+    public void CreateRange(IReadOnlyCollection<ProjectMember> projectMembers)
     {
         context.ProjectMembers.AddRange(projectMembers);
     }

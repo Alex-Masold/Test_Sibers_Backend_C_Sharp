@@ -2,9 +2,12 @@ namespace Domain.Stores;
 
 public interface IRefreshTokenStore
 {
-    Task Save(string token, int userId, CancellationToken cancellationToken = default);
-    Task<int?> GetUserId(string token, CancellationToken cancellationToken = default);
-    Task Delete(string token, CancellationToken cancellationToken = default);
-    Task Delete(int userId, CancellationToken cancellationToken = default);
-    Task Delete(IReadOnlyCollection<int> idList, CancellationToken cancellationToken = default);
+    Task SaveAsync(string token, int userId, CancellationToken cancellationToken = default);
+    Task<int?> GetUserIdAsync(string token, CancellationToken cancellationToken = default);
+    Task DeleteAsync(string token, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int userId, CancellationToken cancellationToken = default);
+    Task DeleteAsync(
+        IReadOnlyCollection<int> idList,
+        CancellationToken cancellationToken = default
+    );
 }
