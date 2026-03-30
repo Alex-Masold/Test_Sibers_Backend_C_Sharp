@@ -153,7 +153,7 @@ public class AuthServiceTests
         await _authService.LogoutAsync(refreshToken);
 
         _refreshTokenStoreMock.Verify(
-            x => x.DeleteAsync(refreshToken, It.IsAny<CancellationToken>()),
+            x => x.DeleteByTokenAsync(refreshToken, It.IsAny<CancellationToken>()),
             Times.Once
         );
     }

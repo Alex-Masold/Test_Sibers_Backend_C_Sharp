@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Application.Interfaces;
+using Domain.Exceptions;
 using Domain.Models;
 using Microsoft.AspNetCore.Http;
 

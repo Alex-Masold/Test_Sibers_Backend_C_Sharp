@@ -18,7 +18,7 @@ public static class JwtConfiguration
             ?? throw new InvalidOperationException("JwtSettings section is not configured");
 
         services.Configure<JwtSettings>(jwtSettingsSection);
-        services.AddScoped<ITokenService, Services.JwtTokenService>();
+        services.AddSingleton<ITokenService, Services.JwtTokenService>();
 
         services
             .AddAuthentication(opt =>
@@ -36,7 +36,7 @@ public static class JwtConfiguration
                     ValidateAudience = false,
 
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero,
+                    ClockSkew = TimeSpan.FromSeconds(30),
 
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(

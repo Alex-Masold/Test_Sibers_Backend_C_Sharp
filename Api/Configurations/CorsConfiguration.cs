@@ -1,6 +1,8 @@
-﻿namespace Api.Configurations;
+﻿using Api.Models;
 
-public abstract class CorsConfiguration
+namespace Api.Configurations;
+
+public static class CorsConfiguration
 {
     public static void Configure(IServiceCollection services, IConfiguration configuration)
     {
@@ -10,7 +12,7 @@ public abstract class CorsConfiguration
         if (clientUrl == null || string.IsNullOrEmpty(clientUrl.WebVue))
         {
             throw new InvalidOperationException(
-                "Секция 'Client:WebVue' не найдена в appsettings.json!"
+                "The Section'Client:WebVue' not found in appsettings.json!"
             );
         }
         services.Configure<ClientUrl>(clientSection);

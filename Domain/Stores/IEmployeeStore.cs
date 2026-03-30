@@ -31,7 +31,7 @@ public interface IEmployeeStore
 
     Employee Create(Employee employee);
     Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
-    Task<int> DeleteRangeAsync(
+    Task<int> DeleteAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     );

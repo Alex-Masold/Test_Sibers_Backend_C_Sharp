@@ -4,7 +4,7 @@ using Api.Converters;
 
 namespace Api.Configurations;
 
-public abstract class ControllersConfiguration
+public static class ControllersConfiguration
 {
     public static void Configure(IServiceCollection services)
     {

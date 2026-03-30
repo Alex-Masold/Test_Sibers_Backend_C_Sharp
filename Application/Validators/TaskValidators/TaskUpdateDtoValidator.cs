@@ -14,29 +14,29 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
 
     public TaskUpdateDtoValidator(IProjectStore projectStore, IProjectMemberStore memberStore)
     {
-        RuleFor(x => x.Title)
+        RuleFor(dto => dto.Title)
             .NotEmpty()
             .WithMessage("Title cannot be empty")
             .MaximumLength(TitleMaxLength)
             .WithMessage($"Title must not exceed {TitleMaxLength} characters")
-            .When(x => x.Title != null);
+            .When(dto => dto.Title != null);
 
-        RuleFor(x => x.Priority)
+        RuleFor(dto => dto.Priority)
             .GreaterThan(0)
             .WithMessage("Priority must be greater than 0")
-            .When(x => x.Priority.HasValue);
+            .When(dto => dto.Priority.HasValue);
 
-        RuleFor(x => x.Status)
+        RuleFor(dto => dto.Status)
             .IsInEnum()
             .WithMessage("Invalid task status")
-            .When(x => x.Status.HasValue);
+            .When(dto => dto.Status.HasValue);
 
-        RuleFor(x => x.Comment.Value)
+        RuleFor(dto => dto.Comment.Value)
             .MaximumLength(CommentMaxLength)
             .WithMessage($"Comment must not exceed {CommentMaxLength} characters")
-            .When(x => x.Comment.HasValue);
+            .When(dto => dto.Comment.HasValue);
 
-        RuleFor(x => x.ProjectId)
+        RuleFor(dto => dto.ProjectId)
             .MustAsync(
                 async (projectId, ct) =>
                 {
@@ -45,9 +45,9 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
                 }
             )
             .WithMessage("Project not found")
-            .When(x => x.ProjectId.HasValue);
+            .When(dto => dto.ProjectId.HasValue);
 
-        RuleFor(x => x.ExecutorId.Value)
+        RuleFor(dto => dto.ExecutorId.Value)
             .MustAsync(
                 async (dto, executorId, ctx, ct) =>
                 {
@@ -62,7 +62,7 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
                         projectId = existingTask.ProjectId;
                     }
 
-                    if (!projectId.HasValue)
+                    if (!projectId.HasValue || !executorId.HasValue)
                         return true;
 
                     return await memberStore.MemberExistAsync(
@@ -73,7 +73,7 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
                 }
             )
             .WithMessage("Executor is not a member of this project")
-            .When(x => x.ExecutorId.HasValue);
+            .When(dto => dto.ExecutorId.HasValue && dto.ExecutorId.Value.HasValue);
 
         RuleFor(dto => dto)
             .CustomAsync(
@@ -87,7 +87,7 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
                         if (
                             dto.ProjectId.HasValue
                             && existingTask.ExecutorId.HasValue
-                            && dto.ExecutorId.Value == null
+                            && !dto.ExecutorId.HasValue
                         )
                         {
                             var isMember = await memberStore.MemberExistAsync(

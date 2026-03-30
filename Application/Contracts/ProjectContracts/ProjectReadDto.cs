@@ -7,9 +7,9 @@ namespace Application.Contracts.ProjectContracts;
 public record ProjectReadDto : IReadDto<Project, ProjectReadDto>
 {
     public required int Id { get; init; }
-    public required string Name { get; init; } = null!;
+    public required string Name { get; init; }
     public required int Priority { get; init; }
-    public required string CompanyOrdering { get; init; } = null!;
+    public required string CompanyOrdering { get; init; }
     public required string? CompanyExecuting { get; init; }
 
     public required DateOnly StartDate { get; init; }

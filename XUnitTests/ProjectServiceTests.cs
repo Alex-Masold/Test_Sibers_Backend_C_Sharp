@@ -451,7 +451,7 @@ public class ProjectServiceTests
         };
 
         _documentStoreMock
-            .Setup(x => x.GetDocumentByIdAsync(documentId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetByIdAsync(documentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(document);
         _projectStoreMock
             .Setup(x => x.GetByIdAsync(projectId, It.IsAny<CancellationToken>()))

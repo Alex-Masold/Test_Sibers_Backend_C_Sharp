@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Application.Contracts.ProjectContracts;
 using Domain.Common;
 
@@ -8,7 +7,6 @@ public record ProjectUpdateRequest
 {
     public string? Name { get; init; }
 
-    [Range(1, 5, ErrorMessage = "The priority must be between 1 and 5")]
     public int? Priority { get; init; }
     public string? CompanyOrdering { get; init; }
     public Optional<string?> CompanyExecuting { get; init; }

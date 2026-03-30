@@ -1,6 +1,7 @@
 using Application.Contracts.Base;
 using Domain.Common;
 using Domain.Models;
+using Shared.Helpers;
 
 namespace Application.Contracts.ProjectContracts;
 
@@ -15,8 +16,6 @@ public record ProjectUpdateDto : IUpdateDto<Project>
     public DateOnly? StartDate { get; init; }
     public Optional<DateOnly?> EndDate { get; init; }
     public Optional<int?> ManagerId { get; init; }
-
-    private string? Normalize(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
     public bool ApplyTo(Project project)
     {
@@ -50,7 +49,7 @@ public record ProjectUpdateDto : IUpdateDto<Project>
 
         if (CompanyExecuting.HasValue)
         {
-            var normalized = Normalize(CompanyExecuting.Value);
+            var normalized = StringHelpers.NormalizeOrNull(CompanyExecuting.Value);
             if (!string.Equals(project.CompanyExecuting, normalized, StringComparison.Ordinal))
             {
                 project.CompanyExecuting = normalized;

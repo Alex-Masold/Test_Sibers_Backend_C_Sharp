@@ -3,29 +3,25 @@ using Domain.Models;
 using Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DataContext;
+using Persistence.Extensions.Helpers;
 
 namespace Persistence.Repositories;
 
 public class ProjectDocumentRepository(ApplicationContext context) : IProjectDocumentStore
 {
-    public async Task LoadProjectAsync(
-        ProjectDocument document,
-        CancellationToken cancellationToken
-    )
-    {
-        await context.Entry(document).Reference(d => d.Project).LoadAsync(cancellationToken);
-    }
-
-    public async Task<ProjectDocument?> GetDocumentByIdAsync(
-        int id,
+    public async Task<ProjectDocument?> GetByIdAsync(
+        int documentId,
         CancellationToken cancellationToken = default
     )
     {
-        var document = await context.ProjectDocuments.FindAsync([id], cancellationToken);
+        var document = await context
+            .ProjectDocuments.Include(d => d.Project)
+            .FirstOrDefaultAsync(d => d.Id == documentId, cancellationToken);
+
         return document;
     }
 
-    public async Task<(IReadOnlyCollection<T> Items, int TotalCount)> GetDocumentsAsync<T>(
+    public async Task<(IReadOnlyCollection<T> Items, int TotalCount)> GetPagedAsync<T>(
         int projectId,
         int pageNumber,
         int pageSize,
@@ -35,26 +31,26 @@ public class ProjectDocumentRepository(ApplicationContext context) : IProjectDoc
     {
         var query = context.ProjectDocuments.AsNoTracking().Where(d => d.ProjectId == projectId);
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
+        var result = await query
             .OrderBy(d => d.Id)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(projection)
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(pageNumber, pageSize, projection, cancellationToken);
 
-        return (items, totalCount);
+        return result;
     }
 
-    public ProjectDocument CreateDocument(ProjectDocument document)
+    public ProjectDocument Create(ProjectDocument document)
     {
         var createdDocument = context.ProjectDocuments.Add(document);
         return createdDocument.Entity;
     }
 
-    public void DeleteDocument(ProjectDocument document)
+    public async Task<int> DeleteAsync(
+        int documentId,
+        CancellationToken cancellationToken = default
+    )
     {
-        context.ProjectDocuments.Remove(document);
+        return await context
+            .ProjectDocuments.Where(e => e.Id == documentId)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 }

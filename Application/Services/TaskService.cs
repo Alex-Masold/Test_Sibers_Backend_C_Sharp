@@ -40,7 +40,7 @@ public class TaskService(
         var distinctIdList = idList.Distinct().ToList();
         var existingTasks = await taskStore.GetRangeByIdsAsync(distinctIdList, ct);
 
-        if (existingTasks.Count != distinctIdList.Count())
+        if (existingTasks.Count != distinctIdList.Count)
         {
             var existingIds = existingTasks.Select(t => t.Id).ToList();
             var nonExistingIds = distinctIdList.Where(id => !existingIds.Contains(id)).ToList();
@@ -60,7 +60,6 @@ public class TaskService(
     public async Task<TaskReadDto> GetTaskByIdAsync(int taskId, CancellationToken ct = default)
     {
         var task = await GetTask(taskId, ct);
-        await taskStore.LoadProjectAsync(task, ct);
 
         accessValidator.EnsureReadPermission(task);
 
@@ -115,11 +114,10 @@ public class TaskService(
         var task = dto.ToEntity();
         task.AuthorId = userService.UserId;
 
-        var createdTask = taskStore.Create(task);
+        var createdTasksId = taskStore.Create(task).Id;
         await unitOfWork.SaveChangesAsync(ct);
-        await taskStore.LoadProjectAsync(createdTask, ct);
-        await taskStore.LoadAuthorAsync(createdTask, ct);
-        await taskStore.LoadExecutorAsync(createdTask, ct);
+
+        var createdTask = await GetTask(createdTasksId, ct);
 
         return TaskReadDto.From(createdTask);
     }
@@ -131,9 +129,6 @@ public class TaskService(
     )
     {
         var task = await GetTask(taskId, ct);
-        await taskStore.LoadProjectAsync(task, ct);
-        await taskStore.LoadAuthorAsync(task, ct);
-        await taskStore.LoadExecutorAsync(task, ct);
 
         accessValidator.EnsureUpdatePermission(task, dto);
 
@@ -159,8 +154,6 @@ public class TaskService(
 
         if (userService.IsDirector)
             return await taskStore.DeleteAsync(taskId, ct);
-
-        await taskStore.LoadProjectAsync(task, ct);
 
         accessValidator.EnsureDeletePermission(task);
 

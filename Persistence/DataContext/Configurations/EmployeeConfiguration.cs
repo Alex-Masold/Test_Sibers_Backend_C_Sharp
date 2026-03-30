@@ -29,40 +29,40 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder
             .Property(e => e.Id)
             .HasColumnName(IdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .ValueGeneratedOnAdd();
 
         builder
             .Property(e => e.FirstName)
             .HasColumnName(FirstNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.FirstNameMaxLength)
             .IsRequired();
 
         builder
             .Property(e => e.MiddleName)
             .HasColumnName(MiddleNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.MiddleNameMaxLength);
 
         builder
             .Property(e => e.LastName)
             .HasColumnName(LastNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.LastNameMaxLength)
             .IsRequired();
 
         builder
             .Property(e => e.Email)
             .HasColumnName(EmailColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.EmailMaxLength)
             .IsRequired();
 
         builder
             .Property(e => e.Role)
             .HasColumnName(RoleColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
 
         builder.HasIndex(e => e.Email).IsUnique().HasDatabaseName(EmailUniqueIndex);

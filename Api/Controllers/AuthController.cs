@@ -1,6 +1,7 @@
 using Api.Requests.AuthRequests;
 using Application.Contracts.AuthContracts;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
@@ -9,16 +10,16 @@ namespace Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController(AuthService authService) : ControllerBase
 {
+    private CookieOptions cookieOptions = new()
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.None,
+        Expires = DateTime.UtcNow.AddDays(7),
+    };
+
     private void SetRefreshTokenCookie(string token)
     {
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTime.UtcNow.AddDays(7),
-        };
-
         Response.Cookies.Append("refresh_token", token, cookieOptions);
     }
 
@@ -45,13 +46,14 @@ public class AuthController(AuthService authService) : ControllerBase
 
         var result = await authService.RefreshAsync(refreshToken, ct);
 
-        Response.Cookies.Delete("refresh_token");
+        Response.Cookies.Delete("refresh_token", cookieOptions);
         SetRefreshTokenCookie(result.refreshToken);
 
         return Ok(AuthReadDto.From(result.accessToken));
     }
 
     [HttpPost("logout")]
+    [Authorize]
     public async Task<IActionResult> Logout(CancellationToken ct = default)
     {
         var refreshToken = Request.Cookies["refresh_token"];
@@ -66,6 +68,7 @@ public class AuthController(AuthService authService) : ControllerBase
     }
 
     [HttpPost("logout/all")]
+    [Authorize]
     public async Task<IActionResult> LogoutAll(CancellationToken ct = default)
     {
         var refreshToken = Request.Cookies["refresh_token"];
@@ -74,7 +77,7 @@ public class AuthController(AuthService authService) : ControllerBase
             return Ok();
 
         await authService.LogoutAllAsync(refreshToken, ct);
-        Response.Cookies.Delete("refresh_token");
+        Response.Cookies.Delete("refresh_token", cookieOptions);
 
         return Ok();
     }

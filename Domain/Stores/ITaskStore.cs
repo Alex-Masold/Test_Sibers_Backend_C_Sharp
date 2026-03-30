@@ -8,10 +8,6 @@ namespace Domain.Stores;
 
 public interface ITaskStore
 {
-    Task LoadAuthorAsync(WorkTask task, CancellationToken cancellationToken = default);
-    Task LoadExecutorAsync(WorkTask task, CancellationToken cancellationToken = default);
-    Task LoadProjectAsync(WorkTask task, CancellationToken cancellationToken = default);
-
     Task<WorkTask?> GetByIdAsync(int taskId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<WorkTask>> GetRangeByIdsAsync(
         IReadOnlyCollection<int> idList,

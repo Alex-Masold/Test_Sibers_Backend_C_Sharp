@@ -5,21 +5,21 @@ using Persistence.Base;
 
 namespace Persistence.DataContext.Configurations;
 
-public class ProjectDocumentConfiguration: IEntityTypeConfiguration<ProjectDocument>
+public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocument>
 {
     private const string Base = $"PROJECT_DOCUMENT";
-    
+
     private const string Project = $"PROJECT";
     private const string ProjectFk = $"FK_{Project}S_DOCUMENTS";
 
     private const string IdColumn = $"{Base}_ID";
-    
+
     private const string OriginalFileNameColumn = $"{Base}_ORIGINAL_FILE_NAME";
     private const string StoredFileNameColumn = $"{Base}_STORED_FILE_NAME";
     private const string ContentTypeColumn = $"{Base}_CONTENT_TYPE";
 
     private const string ProjectIdColumn = $"{Project}_ID";
-    
+
     public void Configure(EntityTypeBuilder<ProjectDocument> builder)
     {
         builder.ToTable($"{Base}S");
@@ -29,31 +29,31 @@ public class ProjectDocumentConfiguration: IEntityTypeConfiguration<ProjectDocum
         builder
             .Property(e => e.Id)
             .HasColumnName(IdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .ValueGeneratedOnAdd();
 
         builder
             .Property(e => e.OriginalFileName)
             .HasColumnName(OriginalFileNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .IsRequired();
 
         builder
             .Property(e => e.StoredFileName)
             .HasColumnName(StoredFileNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .IsRequired();
 
         builder
             .Property(e => e.ContentType)
             .HasColumnName(ContentTypeColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .IsRequired();
-        
+
         builder
             .Property(e => e.ProjectId)
             .HasColumnName(ProjectIdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
         builder
             .HasOne(pm => pm.Project)
@@ -63,3 +63,4 @@ public class ProjectDocumentConfiguration: IEntityTypeConfiguration<ProjectDocum
             .HasConstraintName(ProjectFk);
     }
 }
+

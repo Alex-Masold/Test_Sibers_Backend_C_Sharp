@@ -1,6 +1,7 @@
 using Application.Contracts.Base;
 using Domain.Common;
 using Domain.Models;
+using Shared.Helpers;
 
 namespace Application.Contracts.EmployeeContracts;
 
@@ -12,11 +13,6 @@ public record EmployeeUpdateDto : IUpdateDto<Employee>
     public string? Email { get; init; }
 
     public Role? Role { get; init; }
-
-    private string? Normalize(string? str)
-    {
-        return string.IsNullOrWhiteSpace(str) ? null : str.Trim();
-    }
 
     public bool ApplyTo(Employee employee)
     {
@@ -34,7 +30,7 @@ public record EmployeeUpdateDto : IUpdateDto<Employee>
 
         if (MiddleName.HasValue)
         {
-            var normalized = Normalize(MiddleName.Value);
+            var normalized = StringHelpers.NormalizeOrNull(MiddleName.Value);
             if (!string.Equals(employee.MiddleName, normalized, StringComparison.Ordinal))
             {
                 employee.MiddleName = normalized;

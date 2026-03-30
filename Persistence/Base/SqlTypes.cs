@@ -2,13 +2,9 @@ namespace Persistence.Base;
 
 internal static class SqlTypes
 {
-    public static string Integer() => "INTEGER";
-
-    public static string Float() => "REAL";
-
-    public static string Text() => "TEXT";
-
-    public static string Blob() => "BLOB";
-
-    public static string Numeric() => "NUMERIC";
+    public const string Integer = "INTEGER";
+    public const string Text = "TEXT";
+    public const string Real = "REAL";
+    public const string Blob = "BLOB";
+    public const string Numeric = "NUMERIC";
 }

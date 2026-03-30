@@ -12,7 +12,9 @@ public static class PersistenceConfiguration
 {
     public static void Configure(IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("Sqlite");
+        var connectionString =
+            configuration.GetConnectionString("Sqlite")
+            ?? throw new InvalidOperationException("Connection string 'Sqlite' is not configured.");
 
         services.AddScoped<IEmployeeStore, EmployeeRepository>();
         services.AddScoped<IProjectStore, ProjectRepository>();

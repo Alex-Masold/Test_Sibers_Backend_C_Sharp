@@ -7,6 +7,7 @@ using Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DataContext;
 using Persistence.Extensions.Filters;
+using Persistence.Extensions.Helpers;
 using Persistence.Extensions.Sort;
 
 namespace Persistence.Repositories;
@@ -45,7 +46,11 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
 
     public async Task<Employee?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var employee = await context.Employees.FindAsync([id], cancellationToken);
+        var employee = await context.Employees.FirstOrDefaultAsync(
+            e => e.Id == id,
+            cancellationToken
+        );
+
         return employee;
     }
 
@@ -66,12 +71,16 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
 
     public async Task<Employee?> GetByEmailAsync(
         string email,
-        CancellationToken cancellation = default
+        CancellationToken cancellationToken = default
     )
     {
         var employee = await context
             .Employees.AsNoTracking()
-            .SingleOrDefaultAsync(e => e.Email == email, cancellation);
+            .SingleOrDefaultAsync(
+                e => EF.Functions.Collate(e.Email, "NOCASE") == email,
+                cancellationToken
+            );
+
         return employee;
     }
 
@@ -86,16 +95,11 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
     {
         var query = context.Employees.AsNoTracking().ApplyFilter(filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
+        var result = await query
             .ApplyOrdering(options)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(projection)
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(pageNumber, pageSize, projection, cancellationToken);
 
-        return (items, totalCount);
+        return result;
     }
 
     public Employee Create(Employee employee)
@@ -109,7 +113,7 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
         return await context.Employees.Where(e => e.Id == id).ExecuteDeleteAsync(cancellationToken);
     }
 
-    public async Task<int> DeleteRangeAsync(
+    public async Task<int> DeleteAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     )

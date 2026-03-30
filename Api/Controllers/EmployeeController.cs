@@ -101,7 +101,7 @@ public class EmployeeController(EmployeeService service) : ControllerBase
         return NoContent();
     }
 
-    [HttpPost("delete-batch")]
+    [HttpPost("batch-delete")]
     [Authorize(Roles = "Director")]
     public async Task<ActionResult> DeleteEmployees(
         [FromBody] IReadOnlyCollection<int> idList,

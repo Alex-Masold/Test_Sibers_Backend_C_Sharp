@@ -39,49 +39,49 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder
             .Property(e => e.Id)
             .HasColumnName(IdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .ValueGeneratedOnAdd();
 
         builder
             .Property(e => e.Title)
             .HasColumnName(TitleColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.WorkTask.TitleMaxLength)
             .IsRequired();
 
         builder
             .Property(e => e.Priority)
             .HasColumnName(PriorityColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
 
         builder
             .Property(e => e.Status)
             .HasColumnName(StatusColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
 
         builder
             .Property(e => e.Comment)
             .HasColumnName(CommentColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.WorkTask.CommentMaxLength);
 
         builder
             .Property(e => e.CreatedAt)
             .HasColumnName(CreatedAtColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .IsRequired();
 
         builder
             .Property(e => e.UpdatedAt)
             .HasColumnName(UpdatedAtColumn)
-            .HasColumnType(SqlTypes.Text());
+            .HasColumnType(SqlTypes.Text);
 
         builder
             .Property(e => e.AuthorId)
             .HasColumnName(AuthorIdColumn)
-            .HasColumnType(SqlTypes.Integer());
+            .HasColumnType(SqlTypes.Integer);
         builder
             .HasOne(t => t.Author)
             .WithMany(e => e.AuthoredTasks)
@@ -92,7 +92,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder
             .Property(e => e.ExecutorId)
             .HasColumnName(ExecutorIdColumn)
-            .HasColumnType(SqlTypes.Integer());
+            .HasColumnType(SqlTypes.Integer);
         builder
             .HasOne(t => t.Executor)
             .WithMany(e => e.AssignedTasks)
@@ -103,7 +103,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder
             .Property(t => t.ProjectId)
             .HasColumnName(ProjectIdColumn)
-            .HasColumnType(SqlTypes.Integer());
+            .HasColumnType(SqlTypes.Integer);
 
         builder
             .HasOne(t => t.Project)

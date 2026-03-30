@@ -32,50 +32,47 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder
             .Property(e => e.Id)
             .HasColumnName(IdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .ValueGeneratedOnAdd();
 
         builder
             .Property(e => e.Name)
             .HasColumnName(NameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Project.NameMaxLength)
             .IsRequired();
 
         builder
             .Property(e => e.Priority)
             .HasColumnName(PriorityColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
 
         builder
             .Property(e => e.CompanyOrdering)
             .HasColumnName(CompanyOrderingNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Project.CompanyNameMaxLength)
             .IsRequired();
 
         builder
             .Property(e => e.CompanyExecuting)
             .HasColumnName(CompanyExecutingNameColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Project.CompanyNameMaxLength);
 
         builder
             .Property(e => e.StartDate)
             .HasColumnName(StartDateColumn)
-            .HasColumnType(SqlTypes.Text())
+            .HasColumnType(SqlTypes.Text)
             .IsRequired();
 
-        builder
-            .Property(e => e.EndDate)
-            .HasColumnName(EndDateColumn)
-            .HasColumnType(SqlTypes.Text());
+        builder.Property(e => e.EndDate).HasColumnName(EndDateColumn).HasColumnType(SqlTypes.Text);
 
         builder
             .Property(e => e.ManagerId)
             .HasColumnName(ManagerIdColumn)
-            .HasColumnType(SqlTypes.Integer());
+            .HasColumnType(SqlTypes.Integer);
         builder
             .HasOne(p => p.Manager)
             .WithMany(e => e.ManagedProjects)

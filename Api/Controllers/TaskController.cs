@@ -14,7 +14,7 @@ namespace Api.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/[controller]s")]
+[Route("api/tasks")]
 public class TaskController(TaskService service) : ControllerBase
 {
     [HttpGet("{taskId:int}", Name = "GetTask")]
@@ -24,8 +24,7 @@ public class TaskController(TaskService service) : ControllerBase
     )
     {
         var task = await service.GetTaskByIdAsync(taskId, ct);
-        if (task is null)
-            return NotFound();
+
         return Ok(task);
     }
 
@@ -56,7 +55,7 @@ public class TaskController(TaskService service) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Director, ProjectManager")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult<TaskReadDto>> CreateTask(
         [FromBody] TaskCreateRequest request,
         CancellationToken ct = default
@@ -64,7 +63,8 @@ public class TaskController(TaskService service) : ControllerBase
     {
         var createdDto = request.ToDto();
         var createdTask = await service.CreateTaskAsync(createdDto, ct);
-        return CreatedAtAction(nameof(GetTask), new { id = createdTask.Id }, createdTask);
+
+        return CreatedAtAction(nameof(GetTask), new { taskId = createdTask.Id }, createdTask);
     }
 
     [HttpPatch("{taskId:int}")]
@@ -77,14 +77,11 @@ public class TaskController(TaskService service) : ControllerBase
         var updatedDto = request.ToDto();
         var updatedTask = await service.UpdateTaskAsync(taskId, updatedDto, ct);
 
-        if (updatedTask is null)
-            return NotFound();
-
         return Ok(updatedTask);
     }
 
     [HttpDelete("{taskId:int}")]
-    [Authorize(Roles = "Director, ProjectManager")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult> DeleteTask([FromRoute] int taskId, CancellationToken ct)
     {
         var deletedTaskId = await service.DeleteTaskAsync(taskId, ct);
@@ -92,8 +89,8 @@ public class TaskController(TaskService service) : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete]
-    [Authorize(Roles = "Director")]
+    [HttpPost("batch-delete")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult> DeleteTasks(
         [FromBody] IReadOnlyCollection<int> idList,
         CancellationToken ct = default

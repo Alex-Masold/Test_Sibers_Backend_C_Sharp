@@ -5,27 +5,12 @@ using Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DataContext;
 using Persistence.Extensions.Filters;
+using Persistence.Extensions.Helpers;
 
 namespace Persistence.Repositories;
 
 public class ProjectMemberRepository(ApplicationContext context) : IProjectMemberStore
 {
-    public async Task LoadProjectAsync(
-        ProjectMember member,
-        CancellationToken cancellationToken = default
-    )
-    {
-        await context.Entry(member).Reference(m => m.Project).LoadAsync(cancellationToken);
-    }
-
-    public async Task LoadEmployeeAsync(
-        ProjectMember member,
-        CancellationToken cancellationToken = default
-    )
-    {
-        await context.Entry(member).Reference(m => m.Employee).LoadAsync(cancellationToken);
-    }
-
     public async Task<bool> MemberExistAsync(
         int projectId,
         int employeeId,
@@ -103,21 +88,16 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
         int pageSize,
         Expression<Func<ProjectMember, T>> projection,
         ProjectMemberFilter? filter = null,
-        CancellationToken ct = default
+        CancellationToken cancellationToken = default
     )
     {
         var query = context.ProjectMembers.AsNoTracking().ApplyFilter(filter);
 
-        var totalCount = await query.CountAsync(ct);
-
-        var items = await query
+        var result = await query
             .OrderBy(pm => pm.Id)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(projection)
-            .ToListAsync(ct);
+            .ToPagedListAsync(pageNumber, pageSize, projection, cancellationToken);
 
-        return (items, totalCount);
+        return result;
     }
 
     public ProjectMember Create(ProjectMember member)

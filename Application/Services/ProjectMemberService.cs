@@ -155,8 +155,7 @@ public class ProjectMemberService(
         var createdMember = memberStore.Create(entity);
         await unitOfWork.SaveChangesAsync(ct);
 
-        await memberStore.LoadEmployeeAsync(createdMember, ct);
-        await memberStore.LoadProjectAsync(createdMember, ct);
+        createdMember = await GetMember(createdMember.ProjectId, createdMember.EmployeeId, ct);
 
         return ProjectMemberReadDto.From(createdMember);
     }
@@ -216,15 +215,12 @@ public class ProjectMemberService(
     {
         var member = await GetMember(projectId, employeeId, ct);
 
-        var project = await GetProject(projectId, ct);
-        await EmployeeExist(employeeId, ct);
-
         if (userService.IsDirector)
         {
             return await memberStore.DeleteAsync(member.Id, ct);
         }
 
-        accessValidator.EnsureDeletePermission(project);
+        accessValidator.EnsureDeletePermission(member.Project);
 
         return await memberStore.DeleteAsync(member.Id, ct);
     }

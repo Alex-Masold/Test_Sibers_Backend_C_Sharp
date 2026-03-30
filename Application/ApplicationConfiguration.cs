@@ -11,7 +11,6 @@ using Application.Validators.ProjectMemberValidators;
 using Application.Validators.ProjectValidators;
 using Application.Validators.TaskValidators;
 using FluentValidation;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application;
@@ -44,6 +43,6 @@ public static class ApplicationConfiguration
 
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddScoped<IValidator<PagedDto>, PagedDtoValidator>();
-        services.AddScoped<IValidator<IFormFile>, FileValidator>();
+        services.AddScoped<IValidator<FileUploadDto>, FileValidator>();
     }
 }

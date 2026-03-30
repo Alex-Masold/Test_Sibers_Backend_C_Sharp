@@ -7,33 +7,20 @@ using Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DataContext;
 using Persistence.Extensions.Filters;
+using Persistence.Extensions.Helpers;
 using Persistence.Extensions.Sort;
 
 namespace Persistence.Repositories;
 
 public class TaskRepository(ApplicationContext context) : ITaskStore
 {
-    public async Task LoadAuthorAsync(WorkTask task, CancellationToken cancellationToken = default)
-    {
-        await context.Entry(task).Reference(t => t.Author).LoadAsync(cancellationToken);
-    }
-
-    public async Task LoadExecutorAsync(
-        WorkTask task,
-        CancellationToken cancellationToken = default
-    )
-    {
-        await context.Entry(task).Reference(t => t.Executor).LoadAsync(cancellationToken);
-    }
-
-    public async Task LoadProjectAsync(WorkTask task, CancellationToken cancellationToken = default)
-    {
-        await context.Entry(task).Reference(t => t.Project).LoadAsync(cancellationToken);
-    }
-
     public async Task<WorkTask?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var task = await context.Tasks.FindAsync([id], cancellationToken);
+        var task = await context
+            .Tasks.Include(t => t.Author)
+            .Include(t => t.Executor)
+            .Include(t => t.Project)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
         return task;
     }
 
@@ -43,8 +30,8 @@ public class TaskRepository(ApplicationContext context) : ITaskStore
     )
     {
         var tasks = await context
-            .Tasks.Include(e => e.Project)
-            .Where(e => idList.Contains(e.Id))
+            .Tasks.Include(t => t.Project)
+            .Where(t => idList.Contains(t.Id))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -62,16 +49,11 @@ public class TaskRepository(ApplicationContext context) : ITaskStore
     {
         var query = context.Tasks.AsNoTracking().ApplyFilter(filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
+        var result = await query
             .ApplyOrdering(options)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(projection)
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(pageNumber, pageSize, projection, cancellationToken);
 
-        return (items, totalCount);
+        return result;
     }
 
     public WorkTask Create(WorkTask task)

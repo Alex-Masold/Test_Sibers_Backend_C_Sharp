@@ -1,6 +1,5 @@
 using Application.Interfaces;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 
 namespace FileService;
 
@@ -27,23 +26,24 @@ public class LocalFileService(IWebHostEnvironment environment) : IFileService
     }
 
     public async Task<string> SaveFileAsync(
-        IFormFile file,
+        Stream content,
+        string fileName,
         CancellationToken cancellationToken = default
     )
     {
         if (!Directory.Exists(_uploadPath))
             Directory.CreateDirectory(_uploadPath);
 
-        var storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
         var fullPath = GetSafePath(storedFileName);
 
         await using var stream = new FileStream(fullPath, FileMode.Create);
-        await file.CopyToAsync(stream, cancellationToken);
+        await content.CopyToAsync(stream, cancellationToken);
 
         return storedFileName;
     }
 
-    public FileStream GetFileStream(string storedFileName)
+    public Stream GetFileStream(string storedFileName)
     {
         var fullPath = GetSafePath(storedFileName);
 

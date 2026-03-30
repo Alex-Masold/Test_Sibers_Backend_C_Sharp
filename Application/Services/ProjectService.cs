@@ -152,6 +152,6 @@ public class ProjectService(
         var distinctIdList = idList.Distinct().ToList();
         await GetProjects(distinctIdList, ct);
 
-        return await projectStore.DeleteRangeAsync(distinctIdList, ct);
+        return await projectStore.DeleteAsync(distinctIdList, ct);
     }
 }

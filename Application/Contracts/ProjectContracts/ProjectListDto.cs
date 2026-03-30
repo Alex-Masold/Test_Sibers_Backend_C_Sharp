@@ -8,15 +8,15 @@ public record ProjectListDto : IReadDto<Project, ProjectListDto>
 {
     public required int Id { get; init; }
     public required string Name { get; init; }
-    public int Priority { get; set; } = 1;
-    public required string CompanyOrdering { get; set; } = null!;
-    public string? CompanyExecuting { get; set; }
+    public int Priority { get; init; } = 1;
+    public required string CompanyOrdering { get; init; }
+    public string? CompanyExecuting { get; init; }
 
-    public DateOnly StartDate { get; set; }
-    public DateOnly? EndDate { get; set; }
+    public DateOnly StartDate { get; init; }
+    public DateOnly? EndDate { get; init; }
 
-    public required int TaskTotalCount { get; set; }
-    public required int MembersTotalCount { get; set; }
+    public required int TaskTotalCount { get; init; }
+    public required int MembersTotalCount { get; init; }
 
     public static Expression<Func<Project, ProjectListDto>> Projection =>
         project =>

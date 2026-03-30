@@ -63,7 +63,7 @@ public record TaskUpdateDto : IUpdateDto<WorkTask>
         }
 
         if (changed)
-            return changed;
-        return false;
+            task.UpdatedAt = DateTime.UtcNow;
+        return changed;
     }
 }

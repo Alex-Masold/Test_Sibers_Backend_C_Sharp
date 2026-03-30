@@ -1,9 +1,13 @@
 ﻿using Domain.Stores;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
 namespace RedisService.Repositories;
 
-public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshTokenStore
+public class RefreshTokenRepository(
+    IConnectionMultiplexer redis,
+    ILogger<RefreshTokenRepository> logger
+) : IRefreshTokenStore
 {
     private static readonly TimeSpan TokenTTL = TimeSpan.FromDays(7);
 
@@ -13,6 +17,25 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
 
     private static RedisKey UserTokensKey(int userId) => $"userId_token:{userId}";
 
+    private static double ToUnixSeconds(DateTimeOffset dt) => dt.ToUnixTimeSeconds();
+
+    private static readonly LuaScript DeleteByUserIdScript = LuaScript.Prepare(
+        LoadScript("DeleteByUserId.lua")
+    );
+
+    private static string LoadScript(string fileName)
+    {
+        var assembly = typeof(RefreshTokenRepository).Assembly;
+        var resourceName = $"RedisService.Scripts.{fileName}";
+
+        using var stream =
+            assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Lua script '{resourceName}' not found");
+        using var reader = new StreamReader(stream);
+
+        return reader.ReadToEnd();
+    }
+
     public async Task SaveAsync(
         string token,
         int userId,
@@ -21,16 +44,27 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
     {
         var tokenKey = TokenKey(token);
         var userKey = UserTokensKey(userId);
+        var expiresAt = DateTimeOffset.UtcNow.Add(TokenTTL);
 
         var transaction = db.CreateTransaction();
 
         _ = transaction.StringSetAsync(tokenKey, userId, TokenTTL);
 
-        _ = transaction.SetAddAsync(userKey, token);
+        _ = transaction.SortedSetAddAsync(userKey, token, ToUnixSeconds(expiresAt));
+
+        _ = transaction.SortedSetRemoveRangeByScoreAsync(
+            userKey,
+            0,
+            ToUnixSeconds(DateTimeOffset.UtcNow)
+        ); // score < now = expired
 
         _ = transaction.KeyExpireAsync(userKey, TokenTTL);
 
-        await transaction.ExecuteAsync();
+        bool committed = await transaction.ExecuteAsync();
+        if (!committed)
+        {
+            logger.LogWarning("Redis transaction failed in SaveAsync for userId {UserId}", userId);
+        }
     }
 
     public async Task<int?> GetUserIdAsync(
@@ -45,72 +79,76 @@ public class RefreshTokenRepository(IConnectionMultiplexer redis) : IRefreshToke
         return null;
     }
 
-    public async Task DeleteAsync(string token, CancellationToken cancellationToken = default)
+    public async Task DeleteByTokenAsync(
+        string token,
+        CancellationToken cancellationToken = default
+    )
     {
         var tokenKey = TokenKey(token);
-
         var userId = await GetUserIdAsync(token, cancellationToken);
-        var userKey = UserTokensKey(userId.Value);
         if (!userId.HasValue)
         {
             await db.KeyDeleteAsync(tokenKey);
             return;
         }
 
+        var userKey = UserTokensKey(userId.Value);
+
         var transaction = db.CreateTransaction();
 
         transaction.AddCondition(Condition.KeyExists(tokenKey));
 
         _ = transaction.KeyDeleteAsync(tokenKey);
-        _ = transaction.SetRemoveAsync(userKey, token);
+        _ = transaction.SortedSetRemoveAsync(userKey, token);
 
-        await transaction.ExecuteAsync();
+        bool committed = await transaction.ExecuteAsync();
+        if (!committed)
+        {
+            logger.LogWarning(
+                "Token {TokenPrefix}... already deleted (race condition)",
+                token[..Math.Min(8, token.Length)]
+            );
+        }
     }
 
-    public async Task DeleteAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task DeleteByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         var userKey = UserTokensKey(userId);
 
-        var tokens = await db.SetMembersAsync(userKey);
+        var result = await db.ScriptEvaluateAsync(DeleteByUserIdScript, new { key = userKey }); // RedisKey → KEYS[1]
 
-        if (tokens.Length == 0)
-        {
-            return;
-        }
-
-        var transaction = db.CreateTransaction();
-
-        var keys = tokens.Select(t => TokenKey(t.ToString())).ToArray();
-
-        _ = transaction.KeyDeleteAsync(keys);
-        _ = transaction.KeyDeleteAsync(userKey);
-
-        await transaction.ExecuteAsync();
+        logger.LogDebug("Deleted {Count} keys for userId {UserId}", (int)result, userId);
     }
 
-    public async Task DeleteAsync(
+    public async Task DeleteByUserIdAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     )
     {
-        var batch = db.CreateBatch();
-        var memberTask = new Dictionary<int, Task<RedisValue[]>>();
+        var now = ToUnixSeconds(DateTimeOffset.UtcNow);
 
-        foreach (var userId in idList)
+        var batch = db.CreateBatch();
+        var memberTasks = new Dictionary<int, Task<RedisValue[]>>();
+
+        foreach (var userId in idList.Distinct())
         {
-            memberTask[userId] = batch.SetMembersAsync(UserTokensKey(userId));
+            memberTasks[userId] = batch.SortedSetRangeByScoreAsync(
+                UserTokensKey(userId),
+                start: now,
+                stop: double.PositiveInfinity
+            );
         }
+
         batch.Execute();
-        await Task.WhenAll(memberTask.Values);
+        await Task.WhenAll(memberTasks.Values);
 
         var keysToDelete = new List<RedisKey>();
 
-        foreach (var (userId, task) in memberTask)
+        foreach (var (userId, task) in memberTasks)
         {
             keysToDelete.Add(UserTokensKey(userId));
 
-            var tokens = await task;
-            foreach (var token in tokens)
+            foreach (var token in task.Result)
             {
                 keysToDelete.Add(TokenKey(token.ToString()));
             }

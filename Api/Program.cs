@@ -2,12 +2,18 @@ using Api.Configurations;
 using Api.Middlewares;
 using Application;
 using CurrentUserService;
+using DotNetEnv;
 using FileService;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using RedisService;
 using Scalar.AspNetCore;
 using TokenService;
+
+if (File.Exists(".env"))
+{
+    Env.Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -149,7 +149,7 @@ public class EmployeeService(
 
         await EmployeeExist(employeeId, ct);
 
-        await refreshTokenStore.DeleteAsync(employeeId, ct);
+        await refreshTokenStore.DeleteByUserIdAsync(employeeId, ct);
         var deleted = await employeeStore.DeleteAsync(employeeId, ct);
 
         return deleted;
@@ -166,10 +166,12 @@ public class EmployeeService(
         }
         var existingEmployeeIds = await EmployeesExist(idList, ct);
 
-        var cleanupTask = existingEmployeeIds.Select(id => refreshTokenStore.DeleteAsync(id, ct));
+        var cleanupTask = existingEmployeeIds.Select(id =>
+            refreshTokenStore.DeleteByUserIdAsync(id, ct)
+        );
         await Task.WhenAll(cleanupTask);
 
-        var deleted = await employeeStore.DeleteRangeAsync(existingEmployeeIds, ct);
+        var deleted = await employeeStore.DeleteAsync(existingEmployeeIds, ct);
 
         return deleted;
     }

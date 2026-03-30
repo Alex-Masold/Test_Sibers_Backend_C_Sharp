@@ -31,13 +31,13 @@ public class ProjectMemberConfiguration : IEntityTypeConfiguration<ProjectMember
         builder
             .Property(e => e.Id)
             .HasColumnName(IdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .ValueGeneratedOnAdd();
 
         builder
             .Property(e => e.ProjectId)
             .HasColumnName(ProjectIdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
         builder
             .HasOne(pm => pm.Project)
@@ -49,7 +49,7 @@ public class ProjectMemberConfiguration : IEntityTypeConfiguration<ProjectMember
         builder
             .Property(e => e.EmployeeId)
             .HasColumnName(EmployeeIdColumn)
-            .HasColumnType(SqlTypes.Integer())
+            .HasColumnType(SqlTypes.Integer)
             .IsRequired();
         builder
             .HasOne(pm => pm.Employee)

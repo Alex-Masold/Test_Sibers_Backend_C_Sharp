@@ -5,19 +5,15 @@ namespace Domain.Stores;
 
 public interface IProjectDocumentStore
 {
-    Task LoadProjectAsync(ProjectDocument document, CancellationToken cancellationToken);
-    Task<ProjectDocument?> GetDocumentByIdAsync(
-        int id,
-        CancellationToken cancellationToken = default
-    );
+    Task<ProjectDocument?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
-    Task<(IReadOnlyCollection<T> Items, int TotalCount)> GetDocumentsAsync<T>(
+    Task<(IReadOnlyCollection<T> Items, int TotalCount)> GetPagedAsync<T>(
         int projectId,
         int pageNumber,
         int pageSize,
         Expression<Func<ProjectDocument, T>> projection,
         CancellationToken cancellationToken = default
     );
-    ProjectDocument CreateDocument(ProjectDocument document);
-    void DeleteDocument(ProjectDocument document);
+    ProjectDocument Create(ProjectDocument document);
+    Task<int> DeleteAsync(int documentId, CancellationToken cancellationToken = default);
 }

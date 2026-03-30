@@ -1,6 +1,7 @@
 using Api.Models;
 using Api.Requests.PaginationRequests;
 using Api.Requests.ProjectRequests;
+using Application.Contracts;
 using Application.Contracts.ProjectContracts;
 using Application.Contracts.ProjectDocumentContracts;
 using Application.Parsers;
@@ -59,15 +60,25 @@ public class ProjectController(ProjectService service, ProjectDocumentService do
     [HttpPost("{projectId}/documents")]
     [Authorize(Roles = "Director, Manager")]
     public async Task<IActionResult> UploadDocument(
-        int projectId,
-        IFormFile file,
+        [FromRoute] int projectId,
+        [FromForm] IFormFile file,
         CancellationToken ct = default
     )
     {
         if (file == null || file.Length == 0)
             return BadRequest("File is empty");
 
-        await documentService.UploadProjectDocumentAsync(projectId, file, ct);
+        await using var stream = file.OpenReadStream();
+
+        var fileDto = new FileUploadDto()
+        {
+            FileName = file.FileName,
+            Content = stream,
+            Length = file.Length,
+            ContentType = file.ContentType,
+        };
+
+        await documentService.UploadProjectDocumentAsync(projectId, fileDto, ct);
 
         return Ok();
     }
@@ -145,7 +156,7 @@ public class ProjectController(ProjectService service, ProjectDocumentService do
         return NoContent();
     }
 
-    [HttpPost("delete-batch")]
+    [HttpPost("batch-delete")]
     [Authorize(Roles = "Director")]
     public async Task<ActionResult> DeleteProjects(
         [FromBody] IReadOnlyCollection<int> idList,

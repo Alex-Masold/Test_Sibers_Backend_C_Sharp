@@ -7,7 +7,6 @@ using Domain.Interfaces;
 using Domain.Models;
 using Domain.Stores;
 using FluentValidation;
-using Microsoft.AspNetCore.Http;
 
 namespace Application.Services;
 
@@ -16,7 +15,7 @@ public class ProjectDocumentService(
     IProjectStore projectStore,
     IFileService fileService,
     IProjectAccessValidator accessValidator,
-    IValidator<IFormFile> fileValidator,
+    IValidator<FileUploadDto> fileValidator,
     IValidator<PagedDto> pagedValidator,
     IUnitOfWork unitOfWork
 )
@@ -31,7 +30,7 @@ public class ProjectDocumentService(
 
     private async Task<ProjectDocument> GetDocument(int documentId, CancellationToken ct = default)
     {
-        var document = await documentStore.GetDocumentByIdAsync(documentId, ct);
+        var document = await documentStore.GetByIdAsync(documentId, ct);
         if (document is null)
             throw new NotFoundException(nameof(ProjectDocument), documentId);
         return document;
@@ -39,7 +38,7 @@ public class ProjectDocumentService(
 
     public async Task<ProjectDocumentReadDto> UploadProjectDocumentAsync(
         int projectId,
-        IFormFile file,
+        FileUploadDto fileDto,
         CancellationToken ct = default
     )
     {
@@ -47,22 +46,22 @@ public class ProjectDocumentService(
 
         accessValidator.EnsureUpdatePermission(project);
 
-        var validationResult = await fileValidator.ValidateAsync(file, ct);
+        var validationResult = await fileValidator.ValidateAsync(fileDto, ct);
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var storedName = await fileService.SaveFileAsync(file, ct);
+        var storedName = await fileService.SaveFileAsync(fileDto.Content, fileDto.FileName, ct);
         try
         {
             var document = new ProjectDocument
             {
                 ProjectId = projectId,
-                OriginalFileName = file.FileName,
+                OriginalFileName = fileDto.FileName,
                 StoredFileName = storedName,
-                ContentType = file.ContentType,
+                ContentType = fileDto.ContentType,
             };
 
-            var createdDocument = documentStore.CreateDocument(document);
+            var createdDocument = documentStore.Create(document);
             await unitOfWork.SaveChangesAsync(ct);
             return ProjectDocumentReadDto.From(createdDocument);
         }
@@ -73,13 +72,12 @@ public class ProjectDocumentService(
         }
     }
 
-    public async Task<(FileStream stream, string contentType, string FileName)> GetDocumentAsync(
+    public async Task<(Stream stream, string contentType, string FileName)> GetDocumentAsync(
         int documentId,
         CancellationToken ct = default
     )
     {
         var document = await GetDocument(documentId, ct);
-        await documentStore.LoadProjectAsync(document, ct);
 
         await accessValidator.EnsureReadPermission(document.Project, ct);
 
@@ -101,7 +99,7 @@ public class ProjectDocumentService(
 
         await accessValidator.EnsureReadPermission(project, ct);
 
-        var result = await documentStore.GetDocumentsAsync<ProjectDocumentReadDto>(
+        var result = await documentStore.GetPagedAsync<ProjectDocumentReadDto>(
             project.Id,
             pagedDto.PageNumber,
             pagedDto.PageSize,
@@ -115,12 +113,9 @@ public class ProjectDocumentService(
     public async Task DeleteDocumentAsync(int documentId, CancellationToken ct = default)
     {
         var document = await GetDocument(documentId, ct);
-        await documentStore.LoadProjectAsync(document, ct);
-
         accessValidator.EnsureUpdatePermission(document.Project);
 
-        documentStore.DeleteDocument(document);
-        await unitOfWork.SaveChangesAsync(ct);
+        await documentStore.DeleteAsync(documentId, ct);
         fileService.DeleteFile(document.StoredFileName);
     }
 }

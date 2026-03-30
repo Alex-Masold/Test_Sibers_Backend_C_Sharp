@@ -6,8 +6,6 @@ namespace Domain.Stores;
 
 public interface IProjectMemberStore
 {
-    Task LoadProjectAsync(ProjectMember member, CancellationToken cancellationToken = default);
-    Task LoadEmployeeAsync(ProjectMember member, CancellationToken cancellationToken = default);
     Task<bool> MemberExistAsync(
         int projectId,
         int employeeId,

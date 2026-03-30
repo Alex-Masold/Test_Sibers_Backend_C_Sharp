@@ -1,5 +1,6 @@
 using Application.Contracts.Base;
 using Domain.Models;
+using Shared.Helpers;
 
 namespace Application.Contracts.TaskContracts;
 
@@ -14,18 +15,15 @@ public record TaskCreateDto : ICreateDto<WorkTask>
     public int? ExecutorId { get; init; }
     public required int ProjectId { get; init; }
 
-    private string? Normalize(string? str)
-    {
-        return string.IsNullOrWhiteSpace(str) ? null : str.Trim();
-    }
-
     public WorkTask ToEntity() =>
         new()
         {
             Title = Title.Trim(),
             Status = Status,
             Priority = Priority,
-            Comment = Normalize(Comment),
+            Comment = StringHelpers.NormalizeOrNull(Comment),
+
+            CreatedAt = DateTime.UtcNow,
 
             ExecutorId = ExecutorId,
             ProjectId = ProjectId,

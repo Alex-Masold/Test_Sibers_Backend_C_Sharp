@@ -7,6 +7,7 @@ using Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DataContext;
 using Persistence.Extensions.Filters;
+using Persistence.Extensions.Helpers;
 using Persistence.Extensions.Sort;
 
 namespace Persistence.Repositories;
@@ -15,7 +16,10 @@ public class ProjectRepository(ApplicationContext context) : IProjectStore
 {
     public async Task<Project?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var project = await context.Projects.FindAsync([id], cancellationToken);
+        var project = await context
+            .Projects.Include(p => p.Manager)
+            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+
         return project;
     }
 
@@ -25,7 +29,7 @@ public class ProjectRepository(ApplicationContext context) : IProjectStore
     )
     {
         var projects = await context
-            .Projects.Where(e => idList.Contains(e.Id))
+            .Projects.Where(p => idList.Contains(p.Id))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -43,16 +47,11 @@ public class ProjectRepository(ApplicationContext context) : IProjectStore
     {
         var query = context.Projects.AsNoTracking().ApplyFilter(filter);
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var items = await query
+        var result = await query
             .ApplyOrdering(options)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(projection)
-            .ToListAsync(cancellationToken);
+            .ToPagedListAsync(pageNumber, pageSize, projection, cancellationToken);
 
-        return (items, totalCount);
+        return result;
     }
 
     public Project Create(Project project)
@@ -66,7 +65,7 @@ public class ProjectRepository(ApplicationContext context) : IProjectStore
         return await context.Projects.Where(p => p.Id == id).ExecuteDeleteAsync(cancellationToken);
     }
 
-    public async Task<int> DeleteRangeAsync(
+    public async Task<int> DeleteAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     )

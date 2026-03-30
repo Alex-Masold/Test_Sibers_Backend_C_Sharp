@@ -4,9 +4,9 @@ public interface IRefreshTokenStore
 {
     Task SaveAsync(string token, int userId, CancellationToken cancellationToken = default);
     Task<int?> GetUserIdAsync(string token, CancellationToken cancellationToken = default);
-    Task DeleteAsync(string token, CancellationToken cancellationToken = default);
-    Task DeleteAsync(int userId, CancellationToken cancellationToken = default);
-    Task DeleteAsync(
+    Task DeleteByTokenAsync(string token, CancellationToken cancellationToken = default);
+    Task DeleteByUserIdAsync(int userId, CancellationToken cancellationToken = default);
+    Task DeleteByUserIdAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     );

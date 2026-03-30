@@ -9,5 +9,5 @@ public class ProjectDocument : Entity
     public required string ContentType { get; set; }
 
     public required int ProjectId { get; set; }
-    public required Project Project { get; init; }
+    public Project Project { get; init; } = null!;
 }

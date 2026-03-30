@@ -11,12 +11,7 @@ public record EmployeeCreateDto : ICreateDto<Employee>
     public required string LastName { get; init; }
     public required string Email { get; init; }
 
-    public Role Role { get; init; }
-
-    private string? Normalize(string? str)
-    {
-        return string.IsNullOrWhiteSpace(str) ? null : str.Trim();
-    }
+    public required Role Role { get; init; }
 
     public Employee ToEntity() =>
         new Employee()

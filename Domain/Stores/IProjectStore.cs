@@ -23,7 +23,7 @@ public interface IProjectStore
     );
     Project Create(Project project);
     Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
-    Task<int> DeleteRangeAsync(
+    Task<int> DeleteAsync(
         IReadOnlyCollection<int> projects,
         CancellationToken cancellationToken = default
     );

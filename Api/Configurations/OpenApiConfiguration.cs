@@ -2,7 +2,7 @@
 
 namespace Api.Configurations;
 
-public abstract class OpenApiConfiguration
+public static class OpenApiConfiguration
 {
     public static void Configure(IServiceCollection services)
     {
@@ -55,4 +55,3 @@ public abstract class OpenApiConfiguration
         services.AddEndpointsApiExplorer();
     }
 }
-

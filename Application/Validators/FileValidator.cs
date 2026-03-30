@@ -1,9 +1,9 @@
+using Application.Contracts;
 using FluentValidation;
-using Microsoft.AspNetCore.Http;
 
 namespace Application.Validators;
 
-public class FileValidator : AbstractValidator<IFormFile>
+public class FileValidator : AbstractValidator<FileUploadDto>
 {
     private const long MaxFileSize = 50 * 1024 * 1024; // 50mb
     private static readonly HashSet<string> AllowedExtensions =

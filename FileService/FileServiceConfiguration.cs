@@ -7,7 +7,6 @@ public static class FileServiceConfiguration
 {
     public static void Configure(IServiceCollection services)
     {
-        services.AddScoped<IFileService, LocalFileService>();
+        services.AddSingleton<IFileService, LocalFileService>();
     }
 }
-

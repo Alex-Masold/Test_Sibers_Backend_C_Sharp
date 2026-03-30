@@ -12,6 +12,8 @@ namespace TokenService.Services;
 
 public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : ITokenService
 {
+    private static readonly JwtSecurityTokenHandler Handler = new();
+
     public string GenerateAccessToken(Employee employee)
     {
         var claims = new List<Claim>
@@ -30,7 +32,7 @@ public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : ITokenService
             signingCredentials: credentials
         );
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        return Handler.WriteToken(token);
     }
 
     public string GenerateRefreshToken()

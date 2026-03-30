@@ -63,8 +63,8 @@ public class TaskAccessValidator(ICurrentUserService userService) : ITaskAccessV
                 bool isChangingOnlyStatus =
                     dto.Title == null
                     && dto.Priority == null
-                    && dto.Comment.Value == null
-                    && dto.ExecutorId.Value == null
+                    && !dto.Comment.HasValue
+                    && !dto.ExecutorId.HasValue
                     && dto.ProjectId == null;
 
                 if (!isChangingOnlyStatus)

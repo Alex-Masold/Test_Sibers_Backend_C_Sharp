@@ -15,6 +15,21 @@ public class ApplicationContext(DbContextOptions<ApplicationContext> options)
     public DbSet<ProjectMember> ProjectMembers { get; set; } = null!;
     public DbSet<ProjectDocument> ProjectDocuments { get; set; } = null!;
 
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        await Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        await Database.CommitTransactionAsync(cancellationToken);
+    }
+
+    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        await Database.RollbackTransactionAsync(cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new EmployeeConfiguration());

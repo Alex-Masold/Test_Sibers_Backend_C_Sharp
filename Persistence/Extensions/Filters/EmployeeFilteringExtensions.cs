@@ -31,13 +31,11 @@ public static class EmployeeFilteringExtensions
                 || EF.Functions.Collate(e.LastName, "NOCASE").Contains(search)
             );
         }
-
+        
         if (!string.IsNullOrWhiteSpace(filter.FirstName))
         {
             var normalize = QueryHelpers.NormalizeSearch(filter.FirstName);
-            query = query.Where(e =>
-                EF.Functions.Collate(e.FirstName, "NOCASE").Contains(normalize)
-            );
+            query = query.Where(e => e.FirstName.ToLower().Trim().Contains(normalize));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.MiddleName))

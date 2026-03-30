@@ -15,8 +15,8 @@ namespace Api.Controllers;
 public class ProjectMemberController(ProjectMemberService service) : ControllerBase
 {
     [HttpGet]
-    [Authorize(Roles = "Director, ProjectManager")]
-    public async Task<ActionResult<IReadOnlyCollection<ProjectMemberReadDto>>> GetMembers(
+    [Authorize(Roles = "Director, Manager")]
+    public async Task<ActionResult<PagedResponse<ProjectMemberReadDto>>> GetMembers(
         [FromQuery] PaginationRequest request,
         [FromQuery] ProjectMemberFilter? filter = null,
         CancellationToken ct = default
@@ -36,7 +36,7 @@ public class ProjectMemberController(ProjectMemberService service) : ControllerB
     }
 
     [HttpPost]
-    [Authorize(Roles = "Director")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult<ProjectMemberReadDto>> CreateMember(
         [FromBody] ProjectMemberCreateRequest request,
         CancellationToken ct = default
@@ -44,11 +44,12 @@ public class ProjectMemberController(ProjectMemberService service) : ControllerB
     {
         var dto = request.ToDto();
         var memberDto = await service.CreateMemberAsync(dto, ct);
+
         return Ok(memberDto);
     }
 
     [HttpPost("batch")]
-    [Authorize(Roles = "Director")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult<IReadOnlyCollection<ProjectMemberReadDto>>> CreateMembers(
         [FromBody] IReadOnlyCollection<ProjectMemberCreateRequest> requests,
         CancellationToken ct = default
@@ -56,11 +57,12 @@ public class ProjectMemberController(ProjectMemberService service) : ControllerB
     {
         var dtos = requests.Select(r => r.ToDto()).ToList();
         var memberDtos = await service.CreateMembersAsync(dtos, ct);
+
         return Ok(memberDtos);
     }
 
     [HttpDelete("{projectId:int}/{employeeId:int}")]
-    [Authorize(Roles = "Director, ProjectManager")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult> DeleteMember(
         [FromRoute] int projectId,
         [FromRoute] int employeeId,
@@ -72,8 +74,8 @@ public class ProjectMemberController(ProjectMemberService service) : ControllerB
         return NoContent();
     }
 
-    [HttpDelete]
-    [Authorize(Roles = "Director, ProjectManager")]
+    [HttpPost("batch-delete")]
+    [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult> DeleteMembers(
         [FromBody] IReadOnlyCollection<int> idList,
         CancellationToken ct = default

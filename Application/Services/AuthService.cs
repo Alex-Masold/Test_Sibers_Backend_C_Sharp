@@ -49,8 +49,6 @@ public class AuthService(
 
         var employee = await GetEmployee(dto.Email, ct);
 
-        // await refreshTokenStore.Delete(employee.Id, ct);
-
         var accessToken = tokenService.GenerateAccessToken(employee);
         var refreshToken = tokenService.GenerateRefreshToken();
 
@@ -67,7 +65,7 @@ public class AuthService(
         var employeeId = await GetEmployeeId(refreshToken, ct);
         var employee = await GetEmployee(employeeId, ct);
 
-        await refreshTokenStore.DeleteAsync(refreshToken, ct);
+        await refreshTokenStore.DeleteByTokenAsync(refreshToken, ct);
 
         var newAccessToken = tokenService.GenerateAccessToken(employee);
         var newRefreshToken = tokenService.GenerateRefreshToken();
@@ -78,13 +76,13 @@ public class AuthService(
 
     public async Task LogoutAsync(string refreshToken, CancellationToken ct = default)
     {
-        await refreshTokenStore.DeleteAsync(refreshToken, ct);
+        await refreshTokenStore.DeleteByTokenAsync(refreshToken, ct);
     }
 
     public async Task LogoutAllAsync(string refreshToken, CancellationToken ct = default)
     {
         var userId = await GetEmployeeId(refreshToken, ct);
 
-        await refreshTokenStore.DeleteAsync(userId, ct);
+        await refreshTokenStore.DeleteByUserIdAsync(userId, ct);
     }
 }
