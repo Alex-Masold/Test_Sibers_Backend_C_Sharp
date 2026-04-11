@@ -10,7 +10,8 @@ using TokenService.Settings;
 
 namespace TokenService.Services;
 
-public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : ITokenService
+public class JwtTokenService(IOptions<JwtSettings> jwtSettings, TimeProvider timeProvider)
+    : ITokenService
 {
     private static readonly JwtSecurityTokenHandler Handler = new();
 
@@ -26,8 +27,11 @@ public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : ITokenService
         );
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
+        var now = timeProvider.GetUtcNow();
         var token = new JwtSecurityToken(
-            expires: DateTime.UtcNow.Add(jwtSettings.Value.Expires),
+            issuer: jwtSettings.Value.Issuer,     
+            audience: jwtSettings.Value.Audience,
+            expires: now.Add(jwtSettings.Value.Expires).UtcDateTime,
             claims: claims,
             signingCredentials: credentials
         );

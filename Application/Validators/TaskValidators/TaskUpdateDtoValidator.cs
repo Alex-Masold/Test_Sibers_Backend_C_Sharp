@@ -65,7 +65,7 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
                     if (!projectId.HasValue || !executorId.HasValue)
                         return true;
 
-                    return await memberStore.MemberExistAsync(
+                    return await memberStore.MemberExistsAsync(
                         projectId.Value,
                         executorId.Value,
                         ct
@@ -90,7 +90,7 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
                             && !dto.ExecutorId.HasValue
                         )
                         {
-                            var isMember = await memberStore.MemberExistAsync(
+                            var isMember = await memberStore.MemberExistsAsync(
                                 dto.ProjectId.Value,
                                 existingTask.ExecutorId.Value,
                                 ct

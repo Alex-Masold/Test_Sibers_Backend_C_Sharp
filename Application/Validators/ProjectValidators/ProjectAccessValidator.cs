@@ -33,7 +33,7 @@ public class ProjectAccessValidator(
         if (project.ManagerId == userService.UserId)
             return;
 
-        bool isMember = await memberStore.MemberExistAsync(project.Id, userService.UserId, ct);
+        bool isMember = await memberStore.MemberExistsAsync(project.Id, userService.UserId, ct);
 
         if (!isMember)
         {

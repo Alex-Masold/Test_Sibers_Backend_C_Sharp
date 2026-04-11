@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using FileService.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FileService;

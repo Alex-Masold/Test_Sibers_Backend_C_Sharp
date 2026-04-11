@@ -19,4 +19,3 @@ public record TaskFilter
     public int? ProjectId { get; init; }
     public int? ProjectManagerId { get; init; }
 }
-

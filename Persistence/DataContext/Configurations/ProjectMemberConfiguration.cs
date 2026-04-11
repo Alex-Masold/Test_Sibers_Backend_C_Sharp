@@ -9,8 +9,6 @@ public class ProjectMemberConfiguration : IEntityTypeConfiguration<ProjectMember
 {
     private const string Base = $"PROJECT_MEMBER";
 
-    private const string IdColumn = $"{Base}_ID";
-
     private const string Project = $"PROJECT";
     private const string ProjectFk = $"FK_{Project}S_MEMBERS";
 
@@ -20,19 +18,11 @@ public class ProjectMemberConfiguration : IEntityTypeConfiguration<ProjectMember
     private const string ProjectIdColumn = $"{Project}_ID";
     private const string EmployeeIdColumn = $"{Employee}_ID";
 
-    private const string MembersUniqueIndex = $"UX_{Base}S_{ProjectIdColumn}_{EmployeeIdColumn}";
-
     public void Configure(EntityTypeBuilder<ProjectMember> builder)
     {
         builder.ToTable($"{Base}S");
 
-        builder.HasKey(e => e.Id);
-
-        builder
-            .Property(e => e.Id)
-            .HasColumnName(IdColumn)
-            .HasColumnType(SqlTypes.Integer)
-            .ValueGeneratedOnAdd();
+        builder.HasKey(e => new { e.ProjectId, e.EmployeeId });
 
         builder
             .Property(e => e.ProjectId)
@@ -57,10 +47,5 @@ public class ProjectMemberConfiguration : IEntityTypeConfiguration<ProjectMember
             .HasForeignKey(pm => pm.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName(EmployeeFk);
-
-        builder
-            .HasIndex(e => new { e.ProjectId, e.EmployeeId })
-            .IsUnique()
-            .HasDatabaseName(MembersUniqueIndex);
     }
 }

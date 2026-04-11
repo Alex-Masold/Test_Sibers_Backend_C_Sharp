@@ -5,7 +5,10 @@ namespace Domain.Stores;
 
 public interface IProjectDocumentStore
 {
-    Task<ProjectDocument?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<ProjectDocument?> GetByIdAsync(
+        int documentId,
+        CancellationToken cancellationToken = default
+    );
 
     Task<(IReadOnlyCollection<T> Items, int TotalCount)> GetPagedAsync<T>(
         int projectId,

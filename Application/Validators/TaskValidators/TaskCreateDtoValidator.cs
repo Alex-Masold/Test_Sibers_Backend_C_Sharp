@@ -11,9 +11,7 @@ public class TaskCreateDtoValidator : AbstractValidator<TaskCreateDto>
 
     private const int CommentMaxLength = FieldLimits.WorkTask.CommentMaxLength;
 
-    public TaskCreateDtoValidator(
-        IProjectMemberStore memberStore
-    )
+    public TaskCreateDtoValidator(IProjectMemberStore memberStore)
     {
         RuleFor(x => x.Title)
             .NotEmpty()
@@ -34,7 +32,11 @@ public class TaskCreateDtoValidator : AbstractValidator<TaskCreateDto>
             .MustAsync(
                 async (dto, executorId, ctx, ct) =>
                 {
-                    return await memberStore.MemberExistAsync(dto.ProjectId, executorId!.Value, ct);
+                    return await memberStore.MemberExistsAsync(
+                        dto.ProjectId,
+                        executorId!.Value,
+                        ct
+                    );
                 }
             )
             .WithMessage("Executor is not a member of this project")

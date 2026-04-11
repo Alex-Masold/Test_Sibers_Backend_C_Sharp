@@ -4,6 +4,7 @@ using Domain.Models;
 using Domain.Stores;
 using Microsoft.EntityFrameworkCore;
 using Persistence.DataContext;
+using Persistence.ExpressionBuilders;
 using Persistence.Extensions.Filters;
 using Persistence.Extensions.Helpers;
 
@@ -11,7 +12,7 @@ namespace Persistence.Repositories;
 
 public class ProjectMemberRepository(ApplicationContext context) : IProjectMemberStore
 {
-    public async Task<bool> MemberExistAsync(
+    public async Task<bool> MemberExistsAsync(
         int projectId,
         int employeeId,
         CancellationToken cancellationToken = default
@@ -23,31 +24,27 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
         );
     }
 
-    public async Task<IReadOnlyCollection<(int ProjectId, int EmployeeId)>> MemberExistAsync(
+    public async Task<IReadOnlyCollection<(int ProjectId, int EmployeeId)>> MembersExistsAsync(
         IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken cancellationToken = default
     )
     {
-        var projectIds = pairs.Select(p => p.ProjectId).Distinct();
-        var employeeIds = pairs.Select(e => e.EmployeeId).Distinct();
+        if (pairs.Count == 0)
+            return [];
+
+        var filter = ProjectMemberExpressionBuilder.BuildKeyPair(pairs);
 
         var existing = await context
-            .ProjectMembers.Where(pm =>
-                projectIds.Contains(pm.ProjectId) && employeeIds.Contains(pm.EmployeeId)
-            )
+            .ProjectMembers.Where(filter)
             .Select(pm => new { pm.ProjectId, pm.EmployeeId })
             .ToListAsync(cancellationToken);
 
-        var result = existing
-            .Where(e =>
-                pairs.Any(pm => pm.ProjectId == e.ProjectId && pm.EmployeeId == e.EmployeeId)
-            )
-            .Select(e => (e.ProjectId, e.EmployeeId))
-            .ToList();
-
-        return result;
+        return existing.Select(e => (e.ProjectId, e.EmployeeId)).ToList();
     }
 
+    /// <summary>
+    /// return the tracked object for updating via UnitOfWork.
+    /// </summary>
     public async Task<ProjectMember?> GetByIdAsync(
         int projectId,
         int employeeId,
@@ -66,17 +63,19 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
     }
 
     public async Task<IReadOnlyCollection<ProjectMember>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken cancellationToken = default
     )
     {
-        if (idList == null || idList.Count == 0)
+        if (pairs == null || pairs.Count == 0)
             return new List<ProjectMember>();
+
+        var filter = ProjectMemberExpressionBuilder.BuildKeyPair(pairs);
 
         var members = await context
             .ProjectMembers.Include(pm => pm.Project)
             .Include(pm => pm.Employee)
-            .Where(pm => idList.Contains(pm.Id))
+            .Where(filter)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -94,7 +93,8 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
         var query = context.ProjectMembers.AsNoTracking().ApplyFilter(filter);
 
         var result = await query
-            .OrderBy(pm => pm.Id)
+            .OrderBy(pm => pm.ProjectId)
+            .ThenBy(pm => pm.EmployeeId)
             .ToPagedListAsync(pageNumber, pageSize, projection, cancellationToken);
 
         return result;
@@ -102,8 +102,8 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
 
     public ProjectMember Create(ProjectMember member)
     {
-        var createdmember = context.ProjectMembers.Add(member);
-        return createdmember.Entity;
+        var createdMember = context.ProjectMembers.Add(member);
+        return createdMember.Entity;
     }
 
     public void CreateRange(IReadOnlyCollection<ProjectMember> projectMembers)
@@ -111,20 +111,27 @@ public class ProjectMemberRepository(ApplicationContext context) : IProjectMembe
         context.ProjectMembers.AddRange(projectMembers);
     }
 
-    public async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await context
-            .ProjectMembers.Where(pm => pm.Id == id)
-            .ExecuteDeleteAsync(cancellationToken);
-    }
-
     public async Task<int> DeleteAsync(
-        IReadOnlyCollection<int> idList,
+        int projectId,
+        int employeeId,
         CancellationToken cancellationToken = default
     )
     {
         return await context
-            .ProjectMembers.Where(pm => idList.Contains(pm.Id))
+            .ProjectMembers.Where(pm => pm.ProjectId == projectId && pm.EmployeeId == employeeId)
             .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> DeleteAsync(
+        IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (pairs.Count == 0)
+            return 0;
+
+        var filter = ProjectMemberExpressionBuilder.BuildKeyPair(pairs);
+
+        return await context.ProjectMembers.Where(filter).ExecuteDeleteAsync(cancellationToken);
     }
 }

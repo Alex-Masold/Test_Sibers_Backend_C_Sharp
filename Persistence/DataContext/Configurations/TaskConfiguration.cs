@@ -3,6 +3,7 @@ using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Persistence.Base;
+using Persistence.Converters;
 
 namespace Persistence.DataContext.Configurations;
 
@@ -21,14 +22,20 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
     private const string Author = $"AUTHOR";
     private const string AuthorIdColumn = $"{Base}_{Author}_ID";
     private const string AuthorFk = $"FK_{Base}S_{Author}";
+    private const string AuthorIdIndex = $"IX_{Base}S_{AuthorIdColumn}";
 
     private const string Executor = $"EXECUTOR";
     private const string ExecutorIdColumn = $"{Base}_{Executor}_ID";
     private const string ExecutorFk = $"FK_{Base}S_{Executor}";
+    private const string ExecutorIdIndex = $"IX_{Base}S_{ExecutorIdColumn}";
 
     private const string Project = $"PROJECT";
     private const string ProjectIdColumn = $"{Base}_{Project}_ID";
     private const string ProjectFk = $"FK_{Base}S_{Project}S";
+    private const string ProjectIdIndex = $"IX_{Base}S_{ProjectIdColumn}";
+
+    private const string StatusIndex = $"IX_{Base}S_{StatusColumn}";
+    private const string PriorityIndex = $"IX_{Base}S_{PriorityColumn}";
 
     public void Configure(EntityTypeBuilder<WorkTask> builder)
     {
@@ -47,6 +54,7 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
             .HasColumnName(TitleColumn)
             .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.WorkTask.TitleMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder
@@ -65,18 +73,21 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
             .Property(e => e.Comment)
             .HasColumnName(CommentColumn)
             .HasColumnType(SqlTypes.Text)
-            .HasMaxLength(FieldLimits.WorkTask.CommentMaxLength);
+            .HasMaxLength(FieldLimits.WorkTask.CommentMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation);
 
         builder
             .Property(e => e.CreatedAt)
             .HasColumnName(CreatedAtColumn)
-            .HasColumnType(SqlTypes.Text)
+            .HasColumnType(SqlTypes.Integer)
+            .HasConversion(DateConverters.DateTimeOffsetToUnix)
             .IsRequired();
 
         builder
             .Property(e => e.UpdatedAt)
             .HasColumnName(UpdatedAtColumn)
-            .HasColumnType(SqlTypes.Text);
+            .HasColumnType(SqlTypes.Integer)
+            .HasConversion(DateConverters.NullableDateTimeOfsetToUnix);
 
         builder
             .Property(e => e.AuthorId)
@@ -112,9 +123,10 @@ public class TaskConfiguration : IEntityTypeConfiguration<WorkTask>
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName(ProjectFk);
 
-        builder.HasIndex(t => t.AuthorId);
-        builder.HasIndex(t => t.ExecutorId);
-        builder.HasIndex(t => t.Status);
-        builder.HasIndex(t => t.Priority);
+        builder.HasIndex(t => t.AuthorId).HasDatabaseName(AuthorIdIndex);
+        builder.HasIndex(t => t.ExecutorId).HasDatabaseName(ExecutorIdIndex);
+        builder.HasIndex(t => t.ProjectId).HasDatabaseName(ProjectIdIndex);
+        builder.HasIndex(t => t.Status).HasDatabaseName(StatusIndex);
+        builder.HasIndex(t => t.Priority).HasDatabaseName(PriorityIndex);
     }
 }

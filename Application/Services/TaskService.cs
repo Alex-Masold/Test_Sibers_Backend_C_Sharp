@@ -21,7 +21,8 @@ public class TaskService(
     IValidator<TaskCreateDto> createValidator,
     IValidator<TaskUpdateDto> updateValidator,
     IValidator<PagedDto> pagedValidator,
-    IUnitOfWork unitOfWork
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider
 )
 {
     private async Task<WorkTask> GetTask(int taskId, CancellationToken ct = default)
@@ -33,11 +34,11 @@ public class TaskService(
     }
 
     private async Task<IReadOnlyCollection<WorkTask>> GetTasks(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> taskIdList,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctIdList = taskIdList.Distinct().ToList();
         var existingTasks = await taskStore.GetRangeByIdsAsync(distinctIdList, ct);
 
         if (existingTasks.Count != distinctIdList.Count)
@@ -112,6 +113,7 @@ public class TaskService(
         accessValidator.EnsureCreatePermission(project);
 
         var task = dto.ToEntity();
+        task.CreatedAt = timeProvider.GetUtcNow();
         task.AuthorId = userService.UserId;
 
         var createdTasksId = taskStore.Create(task).Id;
@@ -142,6 +144,7 @@ public class TaskService(
 
         if (dto.ApplyTo(task))
         {
+            task.UpdatedAt = timeProvider.GetUtcNow();
             await unitOfWork.SaveChangesAsync(ct);
         }
 
@@ -160,12 +163,12 @@ public class TaskService(
         return await taskStore.DeleteAsync(taskId, ct);
     }
 
-    public async Task<int> DeleteTasksByIdsAsync(
-        IReadOnlyCollection<int> idList,
+    public async Task<int> DeleteTasksAsync(
+        IReadOnlyCollection<int> taskIdList,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctIdList = taskIdList.Distinct().ToList();
 
         var tasks = await GetTasks(distinctIdList, ct);
         if (userService.IsDirector)

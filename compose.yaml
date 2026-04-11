@@ -4,18 +4,42 @@
     build:
       context: .
       dockerfile: Api/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+        APP_UID: 1000
+
     container_name: sibers_backend
     ports:
       - "5000:8080"
       - "5001:8081"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+         cpus: "2.0"
+         memory: 1G
+        reservations:
+         cpus: "0.5"
+         memory: 256M
     environment:
+        # Development enables: DB seeding, Scalar UI, relaxed JWT validation
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
-      - ASPNETCORE_KESTREL__CERTIFICATES__DEFAULT__PASSWORD=SibersPassword123
+      
+      - ASPNETCORE_KESTREL__CERTIFICATES__DEFAULT__PASSWORD=${CERT_PASSWORD}
       - ASPNETCORE_KESTREL__CERTIFICATES__DEFAULT__PATH=/https/sibers-api.pfx
-      - ConnectionStrings__Redis=redis:6379
+      
+      - ConnectionStrings__Redis=${REDIS_CONNECTION}
       - ConnectionStrings__Sqlite=Data Source=/app/data/sibers.db
-      - Client__WebVue=https://localhost:5173
+      
+      - Client__WebVue=${CLIENT_WEB_VUE}
+      
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY}
+      - JwtSettings__Expires=01:00:00
+      - JwtSettings__Issuer=${JWT_ISSUER}
+      - JwtSettings__Audience=${JWT_AUDIENCE}
+
+      - RefreshSettings__Expires=7.00:00:00
     volumes:
       - sibers_data:/app/data       
       - sibers_uploads:/app/Uploads 
@@ -24,16 +48,40 @@
       # for linux
       - ${HOME}/.aspnet/https:/https:ro
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    networks:
+      - sibers_network
+      
   redis:
     image: redis:alpine
     container_name: sibers_redis
+    restart: unless-stopped
+#    expose:
+#      - "6379"
     ports:
       - "6379:6379"
-    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+      
     volumes:
       - sibers_redis_data:/data
+    networks:
+      - sibers_network
 volumes:
   sibers_data:
+    driver: local
+
   sibers_uploads:
+    driver: local
+
   sibers_redis_data:
+    driver: local
+
+networks:
+  sibers_network:
+    driver: bridge

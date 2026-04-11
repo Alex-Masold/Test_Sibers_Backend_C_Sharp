@@ -23,8 +23,6 @@ public record TaskCreateDto : ICreateDto<WorkTask>
             Priority = Priority,
             Comment = StringHelpers.NormalizeOrNull(Comment),
 
-            CreatedAt = DateTime.UtcNow,
-
             ExecutorId = ExecutorId,
             ProjectId = ProjectId,
         };

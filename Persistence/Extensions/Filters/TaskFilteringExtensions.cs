@@ -1,11 +1,12 @@
 using Domain.Filters;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Persistence.Base;
 using Shared.Helpers;
 
 namespace Persistence.Extensions.Filters;
 
-public static class TaskFilteringExtensions
+internal static class TaskFilteringExtensions
 {
     public static IQueryable<WorkTask> ApplyFilter(
         this IQueryable<WorkTask> query,
@@ -18,13 +19,13 @@ public static class TaskFilteringExtensions
         if (!string.IsNullOrWhiteSpace(filter.Title))
         {
             var normalized = QueryHelpers.NormalizeSearch(filter.Title);
-            query = query.Where(t => EF.Functions.Collate(t.Title, "NOCASE").Contains(normalized));
+            query = query.Where(t => EF.Functions.Like(t.Title, normalized, DbConstants.Escape));
         }
         if (!string.IsNullOrWhiteSpace(filter.Comment))
         {
             var normalized = QueryHelpers.NormalizeSearch(filter.Comment);
             query = query.Where(t =>
-                t.Comment != null && EF.Functions.Collate(t.Comment, "NOCASE").Contains(normalized)
+                t.Comment != null && EF.Functions.Like(t.Comment, normalized, DbConstants.Escape)
             );
         }
 
@@ -57,10 +58,14 @@ public static class TaskFilteringExtensions
         if (filter.UpdatedAt != null)
         {
             if (filter.UpdatedAt.Min.HasValue)
-                query = query.Where(t => t.UpdatedAt >= filter.UpdatedAt.Min.Value);
+                query = query.Where(t =>
+                    t.UpdatedAt.HasValue && t.UpdatedAt.Value >= filter.UpdatedAt.Min.Value
+                );
 
             if (filter.UpdatedAt.Max.HasValue)
-                query = query.Where(t => t.UpdatedAt <= filter.UpdatedAt.Max.Value);
+                query = query.Where(t =>
+                    t.UpdatedAt.HasValue && t.UpdatedAt.Value <= filter.UpdatedAt.Max.Value
+                );
         }
 
         if (filter.ProjectManagerId.HasValue)

@@ -1,4 +1,4 @@
-namespace Application.Contracts.LoginContracts;
+namespace Application.Contracts.AuthContracts;
 
 public record LoginDto
 {

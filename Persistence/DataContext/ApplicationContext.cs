@@ -37,5 +37,16 @@ public class ApplicationContext(DbContextOptions<ApplicationContext> options)
         modelBuilder.ApplyConfiguration(new TaskConfiguration());
         modelBuilder.ApplyConfiguration(new ProjectMemberConfiguration());
         modelBuilder.ApplyConfiguration(new ProjectDocumentConfiguration());
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var navigation in entityType.GetNavigations())
+            {
+                if (navigation.IsCollection)
+                {
+                    navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
+                }
+            }
+        }
     }
 }

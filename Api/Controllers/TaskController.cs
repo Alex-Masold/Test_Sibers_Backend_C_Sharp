@@ -82,9 +82,9 @@ public class TaskController(TaskService service) : ControllerBase
 
     [HttpDelete("{taskId:int}")]
     [Authorize(Roles = "Director, Manager")]
-    public async Task<ActionResult> DeleteTask([FromRoute] int taskId, CancellationToken ct)
+    public async Task<ActionResult> DeleteTask([FromRoute] int taskId, CancellationToken ct = default)
     {
-        var deletedTaskId = await service.DeleteTaskAsync(taskId, ct);
+        await service.DeleteTaskAsync(taskId, ct);
 
         return NoContent();
     }
@@ -96,7 +96,7 @@ public class TaskController(TaskService service) : ControllerBase
         CancellationToken ct = default
     )
     {
-        var deletedTasks = await service.DeleteTasksByIdsAsync(idList, ct);
+        await service.DeleteTasksAsync(idList, ct);
 
         return NoContent();
     }

@@ -10,6 +10,7 @@ public record ProjectCreateRequest
     public required string CompanyOrdering { get; init; }
     public string? CompanyExecuting { get; init; }
 
+    public required DateOnly StartDate { get; init; }
     public DateOnly? EndDate { get; init; }
 
     public int? ManagerId { get; init; }
@@ -21,6 +22,7 @@ public record ProjectCreateRequest
             Priority = Priority,
             CompanyOrdering = CompanyOrdering,
             CompanyExecuting = CompanyExecuting,
+            StartDate = StartDate,
             EndDate = EndDate,
             ManagerId = ManagerId,
         };

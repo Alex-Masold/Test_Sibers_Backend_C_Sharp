@@ -1,4 +1,4 @@
-using Application.Contracts.LoginContracts;
+using Application.Contracts.AuthContracts;
 
 namespace Api.Requests.AuthRequests;
 

@@ -1,6 +1,5 @@
 using Application.Contracts;
 using Application.Contracts.ProjectMemberContracts;
-using Application.Interfaces;
 using Application.Interfaces.Access;
 using Domain.Exceptions;
 using Domain.Filters;
@@ -16,7 +15,6 @@ public class ProjectMemberService(
     IProjectStore projectStore,
     IEmployeeStore employeeStore,
     IProjectMemberStore memberStore,
-    ICurrentUserService userService,
     IProjectMemberAccessValidator accessValidator,
     IValidator<PagedDto> pagedValidator,
     IUnitOfWork unitOfWork
@@ -30,31 +28,36 @@ public class ProjectMemberService(
     {
         var member = await memberStore.GetByIdAsync(projectId, employeeId, ct);
         if (member is null)
-            throw new NotFoundException(nameof(ProjectMember), projectId);
+            throw new NotFoundException(nameof(ProjectMember), (projectId, employeeId));
         return member;
     }
 
     private async Task<IReadOnlyCollection<ProjectMember>> GetMembers(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
-        var existingMembers = await memberStore.GetRangeByIdsAsync(distinctIdList, ct);
+        var distinctPairs = pairs.Distinct().ToList();
+        var existingMembers = await memberStore.GetRangeByIdsAsync(distinctPairs, ct);
 
-        if (existingMembers.Count != distinctIdList.Count)
+        if (existingMembers.Count != distinctPairs.Count)
         {
-            var existingId = existingMembers.Select(m => m.Id).ToList();
-            var nonExistingIds = distinctIdList.Where(id => !existingId.Contains(id)).ToList();
-            throw new NotFoundException(nameof(ProjectMember), nonExistingIds);
+            var existingId = existingMembers
+                .Select(pm => (pm.ProjectId, pm.EmployeeId))
+                .ToHashSet();
+            var missing = distinctPairs
+                .Where(p => !existingId.Contains(p))
+                .Select(p => (object)$"({p.ProjectId},{p.EmployeeId})")
+                .ToList();
+            throw new NotFoundException(nameof(ProjectMember), missing);
         }
 
         return existingMembers;
     }
 
-    private async Task<bool> EmployeeExist(int employeeId, CancellationToken ct = default)
+    private async Task<bool> EmployeeExists(int employeeId, CancellationToken ct = default)
     {
-        var exist = await employeeStore.EmployeeExistAsync(employeeId, ct);
+        var exist = await employeeStore.EmployeeExistsAsync(employeeId, ct);
 
         if (!exist)
         {
@@ -63,12 +66,12 @@ public class ProjectMemberService(
         return exist;
     }
 
-    private async Task<IReadOnlyCollection<int>> EmployeesExist(
-        IReadOnlyCollection<int> idList,
+    private async Task<IReadOnlyCollection<int>> EmployeesExists(
+        IReadOnlyCollection<int> employeeIdList,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctIdList = employeeIdList.Distinct().ToList();
         var existingEmployeeId = await employeeStore.GetExistingIdsAsync(distinctIdList, ct);
 
         if (existingEmployeeId.Count != distinctIdList.Count)
@@ -91,11 +94,11 @@ public class ProjectMemberService(
     }
 
     private async Task<IReadOnlyCollection<Project>> GetProjects(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> projectIdList,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctIdList = projectIdList.Distinct().ToList();
         var existingProjects = await projectStore.GetRangeByIdsAsync(distinctIdList, ct);
 
         if (existingProjects.Count != distinctIdList.Count)
@@ -141,7 +144,9 @@ public class ProjectMemberService(
 
         accessValidator.EnsureCreatePermission(project);
 
-        if (await memberStore.MemberExistAsync(dto.ProjectId, dto.EmployeeId, ct))
+        await EmployeeExists(dto.EmployeeId, ct);
+
+        if (await memberStore.MemberExistsAsync(dto.ProjectId, dto.EmployeeId, ct))
         {
             var error = new ValidationFailure(
                 propertyName: nameof(ProjectMember.EmployeeId),
@@ -152,10 +157,10 @@ public class ProjectMemberService(
 
         var entity = dto.ToEntity();
 
-        var createdMember = memberStore.Create(entity);
+        memberStore.Create(entity);
         await unitOfWork.SaveChangesAsync(ct);
 
-        createdMember = await GetMember(createdMember.ProjectId, createdMember.EmployeeId, ct);
+        var createdMember = await GetMember(dto.ProjectId, dto.EmployeeId, ct);
 
         return ProjectMemberReadDto.From(createdMember);
     }
@@ -172,7 +177,7 @@ public class ProjectMemberService(
         var employeeIds = dtos.Select(d => d.EmployeeId).ToList();
 
         var projects = await GetProjects(projectIds, ct);
-        await EmployeesExist(employeeIds, ct);
+        await EmployeesExists(employeeIds, ct);
 
         foreach (var project in projects)
         {
@@ -181,7 +186,7 @@ public class ProjectMemberService(
 
         var memberIds = dtos.Select(d => (d.ProjectId, d.EmployeeId)).ToList();
 
-        var existing = await memberStore.MemberExistAsync(memberIds, ct);
+        var existing = await memberStore.MembersExistsAsync(memberIds, ct);
 
         if (existing.Count > 0)
         {
@@ -201,7 +206,7 @@ public class ProjectMemberService(
         memberStore.CreateRange(entities);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var createdIds = entities.Select(e => e.Id).ToList();
+        var createdIds = entities.Select(e => (e.ProjectId, e.EmployeeId)).ToList();
         var createdMembers = await memberStore.GetRangeByIdsAsync(createdIds, ct);
 
         return createdMembers.Select(ProjectMemberReadDto.From).ToList();
@@ -215,40 +220,27 @@ public class ProjectMemberService(
     {
         var member = await GetMember(projectId, employeeId, ct);
 
-        if (userService.IsDirector)
-        {
-            return await memberStore.DeleteAsync(member.Id, ct);
-        }
-
         accessValidator.EnsureDeletePermission(member.Project);
 
-        return await memberStore.DeleteAsync(member.Id, ct);
+        return await memberStore.DeleteAsync(member.ProjectId, member.EmployeeId, ct);
     }
 
-    public async Task<int> DeleteMembersByIdsAsync(
-        IReadOnlyCollection<int> idList,
+    public async Task<int> DeleteMembersAsync(
+        IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctPairs = pairs.Distinct().ToList();
 
-        var members = await GetMembers(distinctIdList, ct);
-        var projectIds = members.Select(m => m.ProjectId).Distinct().ToList();
-        var employeeIds = members.Select(m => m.EmployeeId).Distinct().ToList();
+        var members = await GetMembers(distinctPairs, ct);
 
-        var projects = await GetProjects(projectIds, ct);
-        await EmployeesExist(employeeIds, ct);
-
-        if (userService.IsDirector)
-        {
-            return await memberStore.DeleteAsync(distinctIdList, ct);
-        }
+        var projects = members.Select(m => m.Project).DistinctBy(p => p.Id).ToList();
 
         foreach (var project in projects)
         {
             accessValidator.EnsureDeletePermission(project);
         }
 
-        return await memberStore.DeleteAsync(distinctIdList, ct);
+        return await memberStore.DeleteAsync(distinctPairs, ct);
     }
 }

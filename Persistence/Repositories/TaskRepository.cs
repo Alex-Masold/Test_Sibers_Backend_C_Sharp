@@ -14,24 +14,36 @@ namespace Persistence.Repositories;
 
 public class TaskRepository(ApplicationContext context) : ITaskStore
 {
-    public async Task<WorkTask?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// return the tracked object for updating via UnitOfWork
+    /// </summary>
+    public async Task<WorkTask?> GetByIdAsync(
+        int key,
+        CancellationToken cancellationToken = default
+    )
     {
         var task = await context
             .Tasks.Include(t => t.Author)
             .Include(t => t.Executor)
             .Include(t => t.Project)
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(t => t.Id == key, cancellationToken);
         return task;
     }
 
+    /// <summary>
+    /// return the non-tracked objects by keys for read and delete
+    /// <summary>
     public async Task<IReadOnlyCollection<WorkTask>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> taskIdList,
         CancellationToken cancellationToken = default
     )
     {
+        if (taskIdList == null || taskIdList.Count == 0)
+            return new List<WorkTask>();
+
         var tasks = await context
             .Tasks.Include(t => t.Project)
-            .Where(t => idList.Contains(t.Id))
+            .Where(t => taskIdList.Contains(t.Id))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -62,18 +74,18 @@ public class TaskRepository(ApplicationContext context) : ITaskStore
         return createdTask.Entity;
     }
 
-    public async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<int> DeleteAsync(int key, CancellationToken cancellationToken = default)
     {
-        return await context.Tasks.Where(t => t.Id == id).ExecuteDeleteAsync(cancellationToken);
+        return await context.Tasks.Where(t => t.Id == key).ExecuteDeleteAsync(cancellationToken);
     }
 
     public async Task<int> DeleteAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> keyList,
         CancellationToken cancellationToken = default
     )
     {
         return await context
-            .Tasks.Where(t => idList.Contains(t.Id))
+            .Tasks.Where(t => keyList.Contains(t.Id))
             .ExecuteDeleteAsync(cancellationToken);
     }
 }

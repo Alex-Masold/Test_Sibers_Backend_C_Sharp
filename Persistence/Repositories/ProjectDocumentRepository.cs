@@ -9,6 +9,9 @@ namespace Persistence.Repositories;
 
 public class ProjectDocumentRepository(ApplicationContext context) : IProjectDocumentStore
 {
+    /// <summary>
+    /// return the tracked object for updating via UnitOfWork.
+    /// </summary>
     public async Task<ProjectDocument?> GetByIdAsync(
         int documentId,
         CancellationToken cancellationToken = default
@@ -44,13 +47,10 @@ public class ProjectDocumentRepository(ApplicationContext context) : IProjectDoc
         return createdDocument.Entity;
     }
 
-    public async Task<int> DeleteAsync(
-        int documentId,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<int> DeleteAsync(int key, CancellationToken cancellationToken = default)
     {
         return await context
-            .ProjectDocuments.Where(e => e.Id == documentId)
+            .ProjectDocuments.Where(e => e.Id == key)
             .ExecuteDeleteAsync(cancellationToken);
     }
 }

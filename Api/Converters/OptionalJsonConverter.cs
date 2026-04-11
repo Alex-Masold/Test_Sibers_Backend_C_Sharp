@@ -16,6 +16,8 @@ public class OptionalJsonConverter<T> : JsonConverter<Optional<T>>
         return Optional<T>.Of(value);
     }
 
+    // NOTE: Write() is only used if Optional<T> appears in response DTOs.
+    // Currently Optional<T> is only used in request/update DTOs (deserialization only).
     public override void Write(
         Utf8JsonWriter writer,
         Optional<T> value,

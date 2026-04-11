@@ -11,6 +11,11 @@ public class GlobalExceptionMiddleware(
     ILogger<GlobalExceptionMiddleware> logger
 )
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+    
     public async Task InvokeAsync(HttpContext context)
     {
         try
@@ -31,18 +36,15 @@ public class GlobalExceptionMiddleware(
     {
         context.Response.ContentType = "application/problem+json";
 
-        var statusCode = HttpStatusCode.InternalServerError;
-
         var problemDetails = new ProblemDetails();
 
         switch (exception)
         {
             case ValidationException validationException:
-                statusCode = HttpStatusCode.BadRequest;
 
-                context.Response.StatusCode = (int)statusCode;
+                context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 problemDetails.Title = "Validation Failed";
-                problemDetails.Status = (int)statusCode;
+                problemDetails.Status = (int)HttpStatusCode.BadRequest;
                 problemDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
 
                 var errors = validationException
@@ -54,12 +56,11 @@ public class GlobalExceptionMiddleware(
                 break;
 
             case NotFoundException notFoundException:
-                statusCode = HttpStatusCode.NotFound;
 
-                context.Response.StatusCode = (int)statusCode;
+                context.Response.StatusCode = (int)HttpStatusCode.NotFound;
 
                 problemDetails.Title = "Not Found";
-                problemDetails.Status = (int)statusCode;
+                problemDetails.Status = (int)HttpStatusCode.NotFound;
                 problemDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4";
                 problemDetails.Detail = notFoundException.Message;
 
@@ -68,12 +69,11 @@ public class GlobalExceptionMiddleware(
                 break;
 
             case AccessDeniedException accessDeniedException:
-                statusCode = HttpStatusCode.Forbidden;
 
-                context.Response.StatusCode = (int)statusCode;
+                context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
 
                 problemDetails.Title = "Access Denied";
-                problemDetails.Status = (int)statusCode;
+                problemDetails.Status = (int)HttpStatusCode.Forbidden;
                 problemDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.5.3";
                 problemDetails.Detail = accessDeniedException.Message;
 
@@ -82,12 +82,11 @@ public class GlobalExceptionMiddleware(
                 break;
 
             case AuthenticationException authenticationException:
-                statusCode = HttpStatusCode.Unauthorized;
 
-                context.Response.StatusCode = (int)statusCode;
+                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
 
                 problemDetails.Title = "Unauthorized";
-                problemDetails.Status = (int)statusCode;
+                problemDetails.Status = (int)HttpStatusCode.Unauthorized;
                 problemDetails.Type = "https://datatracker.ietf.org/doc/html/rfc7235#section-3.1";
                 problemDetails.Detail = authenticationException.Message;
 
@@ -96,14 +95,13 @@ public class GlobalExceptionMiddleware(
                 break;
 
             default:
-                statusCode = HttpStatusCode.InternalServerError;
 
-                context.Response.StatusCode = (int)statusCode;
+                context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
                 logger.LogError(exception, "Unhandled exception");
 
                 problemDetails.Title = "An error occurred while processing your request";
-                problemDetails.Status = (int)statusCode;
+                problemDetails.Status = (int)HttpStatusCode.InternalServerError;
                 problemDetails.Type = "https://tools.ietf.org/html/rfc7231#section-6.6.1";
                 problemDetails.Detail = "An internal error occurred. Please try again later";
 
@@ -112,10 +110,7 @@ public class GlobalExceptionMiddleware(
                 break;
         }
 
-        var jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
-        return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, jsonOptions));
+        
+        return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, JsonOptions));
     }
 }

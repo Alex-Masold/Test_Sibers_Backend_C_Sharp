@@ -1,8 +1,6 @@
-using Domain.Base;
-
 namespace Domain.Models;
 
-public class ProjectMember : Entity
+public class ProjectMember
 {
     public required int ProjectId { get; set; }
     public Project Project { get; init; } = null!;

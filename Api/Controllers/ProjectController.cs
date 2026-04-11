@@ -78,9 +78,9 @@ public class ProjectController(ProjectService service, ProjectDocumentService do
             ContentType = file.ContentType,
         };
 
-        await documentService.UploadProjectDocumentAsync(projectId, fileDto, ct);
+        var result = await documentService.UploadProjectDocumentAsync(projectId, fileDto, ct);
 
-        return Ok();
+        return CreatedAtAction("DownloadDocument", new { documentId = result.Id }, result);
     }
 
     [HttpGet("{projectId:int}/documents")]
@@ -103,7 +103,7 @@ public class ProjectController(ProjectService service, ProjectDocumentService do
         );
     }
 
-    [HttpGet("documents/{documentId:int}")]
+    [HttpGet("documents/{documentId:int}", Name = "DownloadDocument")]
     public async Task<IActionResult> DownloadDocument(
         int documentId,
         CancellationToken ct = default
@@ -163,7 +163,7 @@ public class ProjectController(ProjectService service, ProjectDocumentService do
         CancellationToken ct = default
     )
     {
-        await service.DeleteProjectAsync(idList, ct);
+        await service.DeleteProjectsAsync(idList, ct);
 
         return NoContent();
     }

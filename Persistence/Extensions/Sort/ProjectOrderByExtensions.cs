@@ -5,23 +5,14 @@ using Persistence.Extensions.Sort.Base;
 
 namespace Persistence.Extensions.Sort;
 
-public static class ProjectOrderByExtensions
+internal static class ProjectOrderByExtensions
 {
     public static IQueryable<Project> ApplyOrdering(
         this IQueryable<Project> query,
         SortOptions<ProjectSortField>? options
     )
     {
-        if (options == null || options.Items.Count == 0)
-            return query.OrderBy(e => e.Id);
-
-        IOrderedQueryable<Project>? ordered = null;
-
-        foreach (var item in options.Items)
-        {
-            ordered = ApplyDirection(item, ordered, query);
-        }
-        return ordered!.ThenBy(e => e.Id);
+        return SortExtensionsBase.ApplyOrdering(query, options, e => e.Id, ApplyDirection);
     }
 
     private static IOrderedQueryable<Project> ApplyDirection(

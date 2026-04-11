@@ -1,17 +1,21 @@
 ﻿using Domain.Stores;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using RedisService.Settings;
 using StackExchange.Redis;
 
 namespace RedisService.Repositories;
 
 public class RefreshTokenRepository(
     IConnectionMultiplexer redis,
+    TimeProvider timeProvider,
+    IOptions<RefreshSettings> settings,
     ILogger<RefreshTokenRepository> logger
 ) : IRefreshTokenStore
 {
-    private static readonly TimeSpan TokenTTL = TimeSpan.FromDays(7);
+    private readonly TimeSpan _tokenTtl = settings.Value.Expires;
 
-    private readonly IDatabase db = redis.GetDatabase();
+    private readonly IDatabase _db = redis.GetDatabase();
 
     private static RedisKey TokenKey(string token) => $"refresh:{token}";
 
@@ -19,9 +23,7 @@ public class RefreshTokenRepository(
 
     private static double ToUnixSeconds(DateTimeOffset dt) => dt.ToUnixTimeSeconds();
 
-    private static readonly LuaScript DeleteByUserIdScript = LuaScript.Prepare(
-        LoadScript("DeleteByUserId.lua")
-    );
+    private static readonly string DeleteByUserIdScript = LoadScript("DeleteByUserId.lua");
 
     private static string LoadScript(string fileName)
     {
@@ -44,21 +46,19 @@ public class RefreshTokenRepository(
     {
         var tokenKey = TokenKey(token);
         var userKey = UserTokensKey(userId);
-        var expiresAt = DateTimeOffset.UtcNow.Add(TokenTTL);
 
-        var transaction = db.CreateTransaction();
+        var now = timeProvider.GetUtcNow();
+        var expiresAt = now.Add(_tokenTtl);
 
-        _ = transaction.StringSetAsync(tokenKey, userId, TokenTTL);
+        var transaction = _db.CreateTransaction();
+
+        _ = transaction.StringSetAsync(tokenKey, userId, _tokenTtl);
 
         _ = transaction.SortedSetAddAsync(userKey, token, ToUnixSeconds(expiresAt));
 
-        _ = transaction.SortedSetRemoveRangeByScoreAsync(
-            userKey,
-            0,
-            ToUnixSeconds(DateTimeOffset.UtcNow)
-        ); // score < now = expired
+        _ = transaction.SortedSetRemoveRangeByScoreAsync(userKey, 0, ToUnixSeconds(now)); // score < now = expired
 
-        _ = transaction.KeyExpireAsync(userKey, TokenTTL);
+        _ = transaction.KeyExpireAsync(userKey, _tokenTtl);
 
         bool committed = await transaction.ExecuteAsync();
         if (!committed)
@@ -72,7 +72,7 @@ public class RefreshTokenRepository(
         CancellationToken cancellationToken = default
     )
     {
-        var value = await db.StringGetAsync(TokenKey(token));
+        var value = await _db.StringGetAsync(TokenKey(token));
         if (value.HasValue && int.TryParse(value, out var id))
             return id;
 
@@ -88,13 +88,13 @@ public class RefreshTokenRepository(
         var userId = await GetUserIdAsync(token, cancellationToken);
         if (!userId.HasValue)
         {
-            await db.KeyDeleteAsync(tokenKey);
+            await _db.KeyDeleteAsync(tokenKey);
             return;
         }
 
         var userKey = UserTokensKey(userId.Value);
 
-        var transaction = db.CreateTransaction();
+        var transaction = _db.CreateTransaction();
 
         transaction.AddCondition(Condition.KeyExists(tokenKey));
 
@@ -115,26 +115,32 @@ public class RefreshTokenRepository(
     {
         var userKey = UserTokensKey(userId);
 
-        var result = await db.ScriptEvaluateAsync(DeleteByUserIdScript, new { key = userKey }); // RedisKey → KEYS[1]
+        var result = await _db.ScriptEvaluateAsync(
+            DeleteByUserIdScript,
+            keys: new RedisKey[] { userKey },
+            values: Array.Empty<RedisValue>()
+        );
 
         logger.LogDebug("Deleted {Count} keys for userId {UserId}", (int)result, userId);
     }
 
+    /// <summary>
+    /// Non-atomic batch delete — trades atomicity for fewer Redis round-trips.
+    /// Acceptable for bulk operations where a small race window is tolerable.
+    /// </summary>
     public async Task DeleteByUserIdAsync(
         IReadOnlyCollection<int> idList,
         CancellationToken cancellationToken = default
     )
     {
-        var now = ToUnixSeconds(DateTimeOffset.UtcNow);
-
-        var batch = db.CreateBatch();
+        var batch = _db.CreateBatch();
         var memberTasks = new Dictionary<int, Task<RedisValue[]>>();
 
         foreach (var userId in idList.Distinct())
         {
             memberTasks[userId] = batch.SortedSetRangeByScoreAsync(
                 UserTokensKey(userId),
-                start: now,
+                start: double.NegativeInfinity,
                 stop: double.PositiveInfinity
             );
         }
@@ -156,7 +162,7 @@ public class RefreshTokenRepository(
 
         if (keysToDelete.Count > 0)
         {
-            await db.KeyDeleteAsync(keysToDelete.ToArray());
+            await _db.KeyDeleteAsync(keysToDelete.ToArray());
         }
     }
 }

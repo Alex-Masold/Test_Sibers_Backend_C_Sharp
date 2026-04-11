@@ -42,7 +42,7 @@ public class EmployeeCreateDtoValidator : AbstractValidator<EmployeeCreateDto>
             .MustAsync(
                 async (email, ct) =>
                 {
-                    var isExist = await employeeStore.EmailExistAsync(email, ct);
+                    var isExist = await employeeStore.EmailExistsAsync(email, ct);
                     return !isExist;
                 }
             )

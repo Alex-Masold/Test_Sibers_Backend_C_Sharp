@@ -82,6 +82,8 @@ public class TaskAccessValidator(ICurrentUserService userService) : ITaskAccessV
 
         if (userService.Role == Role.Manager)
         {
+            if (task.Project is null)
+                throw new InvalidOperationException("Task Project must be loaded");
             if (task.Project?.ManagerId != userService.UserId)
                 throw new AccessDeniedException(
                     "Managers cannot delete tasks from other managers' projects"

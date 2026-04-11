@@ -6,10 +6,8 @@ namespace Application.Contracts.ProjectMemberContracts;
 
 public record ProjectMemberReadDto : IReadDto<ProjectMember, ProjectMemberReadDto>
 {
-    public required int Id { get; init; }
-
-    public int? ProjectId { get; init; }
-    public int? EmployeeId { get; init; }
+    public int ProjectId { get; init; }
+    public int EmployeeId { get; init; }
 
     public string? ProjectName { get; init; }
     public string? EmployeeFirstName { get; init; }
@@ -20,8 +18,6 @@ public record ProjectMemberReadDto : IReadDto<ProjectMember, ProjectMemberReadDt
         member =>
             new()
             {
-                Id = member.Id,
-
                 ProjectId = member.ProjectId,
                 EmployeeId = member.EmployeeId,
 
@@ -34,8 +30,6 @@ public record ProjectMemberReadDto : IReadDto<ProjectMember, ProjectMemberReadDt
     public static ProjectMemberReadDto From(ProjectMember member) =>
         new()
         {
-            Id = member.Id,
-
             ProjectId = member.ProjectId,
             EmployeeId = member.EmployeeId,
 

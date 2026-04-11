@@ -3,6 +3,7 @@ using Domain.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Persistence.Base;
+using Persistence.Converters;
 
 namespace Persistence.DataContext.Configurations;
 
@@ -23,6 +24,8 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
     private const string ManagerIdColumn = $"{Base}_MANAGER_ID";
     private const string EmployeeFk = $"FK_{Base}S_{Employee}S";
 
+    private const string ManagerIdIndex = $"IX_{Base}S_{ManagerIdColumn}";
+
     public void Configure(EntityTypeBuilder<Project> builder)
     {
         builder.ToTable($"{Base}S");
@@ -40,6 +43,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnName(NameColumn)
             .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Project.NameMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder
@@ -53,22 +57,28 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasColumnName(CompanyOrderingNameColumn)
             .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Project.CompanyNameMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder
             .Property(e => e.CompanyExecuting)
             .HasColumnName(CompanyExecutingNameColumn)
             .HasColumnType(SqlTypes.Text)
-            .HasMaxLength(FieldLimits.Project.CompanyNameMaxLength);
+            .HasMaxLength(FieldLimits.Project.CompanyNameMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation);
 
         builder
             .Property(e => e.StartDate)
             .HasColumnName(StartDateColumn)
             .HasColumnType(SqlTypes.Text)
+            .HasConversion(DateConverters.DateOnlyToString)
             .IsRequired();
 
-        builder.Property(e => e.EndDate).HasColumnName(EndDateColumn).HasColumnType(SqlTypes.Text);
-
+        builder
+            .Property(e => e.EndDate)
+            .HasColumnName(EndDateColumn)
+            .HasColumnType(SqlTypes.Text)
+            .HasConversion(DateConverters.NullableDateOnlyToString);
         builder
             .Property(e => e.ManagerId)
             .HasColumnName(ManagerIdColumn)
@@ -79,5 +89,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasForeignKey(p => p.ManagerId)
             .OnDelete(DeleteBehavior.SetNull)
             .HasConstraintName(EmployeeFk);
+
+        builder.HasIndex(p => p.ManagerId).HasDatabaseName(ManagerIdIndex);
     }
 }

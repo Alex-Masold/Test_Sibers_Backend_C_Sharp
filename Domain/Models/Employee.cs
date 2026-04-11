@@ -11,9 +11,14 @@ public class Employee : Entity
 
     public Role Role { get; set; } = Role.Worker;
 
-    public IReadOnlyCollection<WorkTask> AssignedTasks { get; init; } = new List<WorkTask>();
-    public IReadOnlyCollection<WorkTask> AuthoredTasks { get; init; } = new List<WorkTask>();
-    public IReadOnlyCollection<Project> ManagedProjects { get; init; } = new List<Project>();
-    public IReadOnlyCollection<ProjectMember> Memberships { get; init; } =
-        new List<ProjectMember>();
+    
+    private readonly List<WorkTask> _assignedTasks = [];
+    private readonly List<WorkTask> _authoredTasks = [];
+    private readonly List<Project> _managedProjects = [];
+    private readonly List<ProjectMember> _memberships = [];
+
+    public IReadOnlyCollection<WorkTask> AssignedTasks => _assignedTasks;
+    public IReadOnlyCollection<WorkTask> AuthoredTasks => _authoredTasks;
+    public IReadOnlyCollection<Project> ManagedProjects => _managedProjects;
+    public IReadOnlyCollection<ProjectMember> Memberships => _memberships;
 }

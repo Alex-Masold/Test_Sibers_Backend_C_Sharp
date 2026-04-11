@@ -69,7 +69,7 @@ public class ProjectMemberController(ProjectMemberService service) : ControllerB
         CancellationToken ct = default
     )
     {
-        var deletedMemberId = await service.DeleteMemberAsync(projectId, employeeId, ct);
+        await service.DeleteMemberAsync(projectId, employeeId, ct);
 
         return NoContent();
     }
@@ -77,11 +77,12 @@ public class ProjectMemberController(ProjectMemberService service) : ControllerB
     [HttpPost("batch-delete")]
     [Authorize(Roles = "Director, Manager")]
     public async Task<ActionResult> DeleteMembers(
-        [FromBody] IReadOnlyCollection<int> idList,
+        [FromBody] IReadOnlyCollection<ProjectMemberDeleteRequest> requests,
         CancellationToken ct = default
     )
     {
-        var deletedMemberIds = await service.DeleteMembersByIdsAsync(idList, ct);
+        var pairs = requests.Select(r => r.ToEntity()).ToList();
+        await service.DeleteMembersAsync(pairs, ct);
 
         return NoContent();
     }

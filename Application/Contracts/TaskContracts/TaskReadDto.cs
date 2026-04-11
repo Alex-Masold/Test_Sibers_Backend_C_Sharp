@@ -13,8 +13,8 @@ public record TaskReadDto : IReadDto<WorkTask, TaskReadDto>
     public WorkTaskStatus Status { get; init; }
     public string? Comment { get; init; }
     public int Priority { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
 
     public EmployeeShortReadDto? Author { get; init; }
     public EmployeeShortReadDto? Executor { get; init; }

@@ -10,7 +10,7 @@ public record ProjectCreateDto : ICreateDto<Project>
     public required string CompanyOrdering { get; init; }
     public string? CompanyExecuting { get; init; }
 
-    public DateOnly StartDate { get; init; } = DateOnly.FromDateTime(DateTime.UtcNow);
+    public required DateOnly StartDate { get; init; }
     public DateOnly? EndDate { get; init; }
 
     public int? ManagerId { get; init; }

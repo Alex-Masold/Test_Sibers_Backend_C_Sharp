@@ -7,7 +7,7 @@ public interface IRefreshTokenStore
     Task DeleteByTokenAsync(string token, CancellationToken cancellationToken = default);
     Task DeleteByUserIdAsync(int userId, CancellationToken cancellationToken = default);
     Task DeleteByUserIdAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> userIdList,
         CancellationToken cancellationToken = default
     );
 }

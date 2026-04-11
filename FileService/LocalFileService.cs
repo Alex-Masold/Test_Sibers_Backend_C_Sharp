@@ -1,9 +1,11 @@
 using Application.Interfaces;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace FileService;
+namespace FileService.Services;
 
-public class LocalFileService(IWebHostEnvironment environment) : IFileService
+public class LocalFileService(IWebHostEnvironment environment, ILogger<IFileService> logger)
+    : IFileService
 {
     private const string UploadDirectory = "Uploads";
     private readonly string _uploadPath = Path.Combine(
@@ -31,8 +33,7 @@ public class LocalFileService(IWebHostEnvironment environment) : IFileService
         CancellationToken cancellationToken = default
     )
     {
-        if (!Directory.Exists(_uploadPath))
-            Directory.CreateDirectory(_uploadPath);
+        Directory.CreateDirectory(_uploadPath);
 
         var storedFileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
         var fullPath = GetSafePath(storedFileName);
@@ -58,6 +59,11 @@ public class LocalFileService(IWebHostEnvironment environment) : IFileService
         var fullPath = GetSafePath(storedFileName);
 
         if (File.Exists(fullPath))
+        {
             File.Delete(fullPath);
+            return;
+        }
+
+        logger.LogWarning($"{fullPath} not exist");
     }
 }

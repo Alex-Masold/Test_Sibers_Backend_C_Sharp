@@ -1,27 +1,38 @@
 using Api.Requests.AuthRequests;
 using Application.Contracts.AuthContracts;
 using Application.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using RedisService.Settings;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController(AuthService authService) : ControllerBase
+public class AuthController(
+    AuthService authService,
+    IOptions<RefreshSettings> refreshSettings,
+    IWebHostEnvironment environment,
+    TimeProvider timeProvider
+) : ControllerBase
 {
-    private CookieOptions cookieOptions = new()
+    private const string RefreshTokenCookie = "refresh_token";
+
+    private CookieOptions CreateCookieOptions() =>
+        new()
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = environment.IsDevelopment() ? SameSiteMode.None : SameSiteMode.Strict,
+            Expires = timeProvider.GetUtcNow().Add(refreshSettings.Value.Expires),
+        };
+
+    private static readonly CookieOptions DeleteCookieOptions = new()
     {
         HttpOnly = true,
         Secure = true,
         SameSite = SameSiteMode.None,
-        Expires = DateTime.UtcNow.AddDays(7),
     };
-
-    private void SetRefreshTokenCookie(string token)
-    {
-        Response.Cookies.Append("refresh_token", token, cookieOptions);
-    }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthReadDto>> Login(
@@ -30,54 +41,52 @@ public class AuthController(AuthService authService) : ControllerBase
     )
     {
         var dto = request.ToDto();
-        var (accessToken, refreshToken) = await authService.LoginAsync(dto, ct);
+        var result = await authService.LoginAsync(dto, ct);
 
-        SetRefreshTokenCookie(refreshToken);
+        Response.Cookies.Append(RefreshTokenCookie, result.refreshToken, CreateCookieOptions());
 
-        return Ok(AuthReadDto.From(accessToken));
+        return Ok(AuthReadDto.From(result.accessToken));
     }
 
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthReadDto>> Refresh(CancellationToken ct = default)
     {
-        var refreshToken = Request.Cookies["refresh_token"];
+        var refreshToken = Request.Cookies[RefreshTokenCookie];
         if (string.IsNullOrEmpty(refreshToken))
             return Unauthorized();
 
         var result = await authService.RefreshAsync(refreshToken, ct);
 
-        Response.Cookies.Delete("refresh_token", cookieOptions);
-        SetRefreshTokenCookie(result.refreshToken);
+        Response.Cookies.Delete(RefreshTokenCookie, DeleteCookieOptions);
+        Response.Cookies.Append(RefreshTokenCookie, result.refreshToken, CreateCookieOptions());
 
         return Ok(AuthReadDto.From(result.accessToken));
     }
 
     [HttpPost("logout")]
-    [Authorize]
     public async Task<IActionResult> Logout(CancellationToken ct = default)
     {
-        var refreshToken = Request.Cookies["refresh_token"];
+        var refreshToken = Request.Cookies[RefreshTokenCookie];
 
         if (string.IsNullOrEmpty(refreshToken))
             return Ok();
 
         await authService.LogoutAsync(refreshToken, ct);
-        Response.Cookies.Delete("refresh_token");
+        Response.Cookies.Delete(RefreshTokenCookie, DeleteCookieOptions);
 
         return Ok();
     }
 
     [HttpPost("logout/all")]
-    [Authorize]
     public async Task<IActionResult> LogoutAll(CancellationToken ct = default)
     {
-        var refreshToken = Request.Cookies["refresh_token"];
+        var refreshToken = Request.Cookies[RefreshTokenCookie];
 
         if (string.IsNullOrEmpty(refreshToken))
             return Ok();
 
         await authService.LogoutAllAsync(refreshToken, ct);
-        Response.Cookies.Delete("refresh_token", cookieOptions);
+        Response.Cookies.Delete(RefreshTokenCookie, DeleteCookieOptions);
 
         return Ok();
     }

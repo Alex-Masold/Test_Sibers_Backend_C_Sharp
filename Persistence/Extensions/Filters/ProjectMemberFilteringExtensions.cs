@@ -3,7 +3,7 @@ using Domain.Models;
 
 namespace Persistence.Extensions.Filters;
 
-public static class ProjectMemberFilteringExtensions
+internal static class ProjectMemberFilteringExtensions
 {
     public static IQueryable<ProjectMember> ApplyFilter(
         this IQueryable<ProjectMember> query,

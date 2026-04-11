@@ -1,11 +1,12 @@
 using Domain.Filters;
 using Domain.Models;
 using Microsoft.EntityFrameworkCore;
+using Persistence.Base;
 using Shared.Helpers;
 
 namespace Persistence.Extensions.Filters;
 
-public static class ProjectFilteringExtensions
+internal static class ProjectFilteringExtensions
 {
     public static IQueryable<Project> ApplyFilter(
         this IQueryable<Project> query,
@@ -26,14 +27,14 @@ public static class ProjectFilteringExtensions
         if (!string.IsNullOrWhiteSpace(filter.Name))
         {
             var normalize = QueryHelpers.NormalizeSearch(filter.Name);
-            query = query.Where(p => EF.Functions.Collate(p.Name, "NOCASE").Contains(normalize));
+            query = query.Where(p => EF.Functions.Like(p.Name, normalize, DbConstants.Escape));
         }
 
         if (!string.IsNullOrWhiteSpace(filter.CompanyOrdering))
         {
             var normalize = QueryHelpers.NormalizeSearch(filter.CompanyOrdering);
             query = query.Where(p =>
-                EF.Functions.Collate(p.CompanyOrdering, "NOCASE").Contains(normalize)
+                EF.Functions.Like(p.CompanyOrdering, normalize, DbConstants.Escape)
             );
         }
 
@@ -42,7 +43,7 @@ public static class ProjectFilteringExtensions
             var normalize = QueryHelpers.NormalizeSearch(filter.CompanyExecuting);
             query = query.Where(p =>
                 p.CompanyExecuting != null
-                && EF.Functions.Collate(p.CompanyExecuting, "NOCASE").Contains(normalize)
+                && EF.Functions.Like(p.CompanyExecuting, normalize, DbConstants.Escape)
             );
         }
 

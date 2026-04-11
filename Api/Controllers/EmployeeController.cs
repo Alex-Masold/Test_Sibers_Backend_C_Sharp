@@ -17,13 +17,13 @@ namespace Api.Controllers;
 [Route("api/employees")]
 public class EmployeeController(EmployeeService service) : ControllerBase
 {
-    [HttpGet("{id:int}", Name = "GetEmployee")]
+    [HttpGet("{employeeId:int}", Name = "GetEmployee")]
     public async Task<ActionResult<EmployeeReadDto>> GetEmployee(
-        [FromRoute] int id,
+        [FromRoute] int employeeId,
         CancellationToken ct = default
     )
     {
-        var employee = await service.GetEmployeeByIdAsync(id, ct);
+        var employee = await service.GetEmployeeByIdAsync(employeeId, ct);
         return Ok(employee);
     }
 
@@ -71,32 +71,32 @@ public class EmployeeController(EmployeeService service) : ControllerBase
         var createdEmployee = await service.CreateEmployeeAsync(createDto, ct);
         return CreatedAtAction(
             nameof(GetEmployee),
-            new { id = createdEmployee.Id },
+            new { employeeId = createdEmployee.Id },
             createdEmployee
         );
     }
 
-    [HttpPatch("{id:int}")]
+    [HttpPatch("{employeeId:int}")]
     public async Task<ActionResult<EmployeeReadDto>> UpdateEmployee(
-        [FromRoute] int id,
+        [FromRoute] int employeeId,
         [FromBody] EmployeeUpdateRequest request,
         CancellationToken ct = default
     )
     {
         var updateDto = request.ToDto();
-        var updateEmployee = await service.UpdateEmployeeAsync(id, updateDto, ct);
+        var updateEmployee = await service.UpdateEmployeeAsync(employeeId, updateDto, ct);
 
         return Ok(updateEmployee);
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{employeeId:int}")]
     [Authorize(Roles = "Director")]
     public async Task<ActionResult> DeleteEmployee(
-        [FromRoute] int id,
+        [FromRoute] int employeeId,
         CancellationToken ct = default
     )
     {
-        await service.DeleteEmployeeAsync(id, ct);
+        await service.DeleteEmployeeAsync(employeeId, ct);
 
         return NoContent();
     }
@@ -104,11 +104,11 @@ public class EmployeeController(EmployeeService service) : ControllerBase
     [HttpPost("batch-delete")]
     [Authorize(Roles = "Director")]
     public async Task<ActionResult> DeleteEmployees(
-        [FromBody] IReadOnlyCollection<int> idList,
+        [FromBody] IReadOnlyCollection<int> employeeIdList,
         CancellationToken ct = default
     )
     {
-        await service.DeleteEmployeesAsync(idList, ct);
+        await service.DeleteEmployeesAsync(employeeIdList, ct);
 
         return NoContent();
     }

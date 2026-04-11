@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RedisService.Repositories;
+using RedisService.Settings;
 using StackExchange.Redis;
 
 namespace RedisService;
@@ -13,6 +14,9 @@ public static class RedisConfiguration
         var connection =
             configuration.GetConnectionString("Redis")
             ?? throw new InvalidOperationException("Redis connection string is not configured");
+
+        var refreshSettingsSection = configuration.GetSection("RefreshSettings");
+        services.Configure<RefreshSettings>(refreshSettingsSection);
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {

@@ -10,7 +10,7 @@ public interface ITaskStore
 {
     Task<WorkTask?> GetByIdAsync(int taskId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<WorkTask>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> taskIdList,
         CancellationToken cancellationToken = default
     );
 
@@ -25,9 +25,9 @@ public interface ITaskStore
 
     WorkTask Create(WorkTask task);
 
-    Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<int> DeleteAsync(int taskId, CancellationToken cancellationToken = default);
     Task<int> DeleteAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> taskIdList,
         CancellationToken cancellationToken = default
     );
 }

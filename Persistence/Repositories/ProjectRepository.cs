@@ -14,22 +14,28 @@ namespace Persistence.Repositories;
 
 public class ProjectRepository(ApplicationContext context) : IProjectStore
 {
-    public async Task<Project?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// return the tracked object for updating via UnitOfWork.
+    /// </summary>
+    public async Task<Project?> GetByIdAsync(int key, CancellationToken cancellationToken = default)
     {
         var project = await context
             .Projects.Include(p => p.Manager)
-            .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(p => p.Id == key, cancellationToken);
 
         return project;
     }
 
     public async Task<IReadOnlyCollection<Project>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> projectIdList,
         CancellationToken cancellationToken = default
     )
     {
+        if (projectIdList == null || projectIdList.Count == 0)
+            return new List<Project>();
+
         var projects = await context
-            .Projects.Where(p => idList.Contains(p.Id))
+            .Projects.Where(p => projectIdList.Contains(p.Id))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -60,18 +66,18 @@ public class ProjectRepository(ApplicationContext context) : IProjectStore
         return createdProject.Entity;
     }
 
-    public async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<int> DeleteAsync(int key, CancellationToken cancellationToken = default)
     {
-        return await context.Projects.Where(p => p.Id == id).ExecuteDeleteAsync(cancellationToken);
+        return await context.Projects.Where(p => p.Id == key).ExecuteDeleteAsync(cancellationToken);
     }
 
     public async Task<int> DeleteAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> keyList,
         CancellationToken cancellationToken = default
     )
     {
         return await context
-            .Projects.Where(p => idList.Contains(p.Id))
+            .Projects.Where(p => keyList.Contains(p.Id))
             .ExecuteDeleteAsync(cancellationToken);
     }
 }

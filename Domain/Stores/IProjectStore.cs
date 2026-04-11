@@ -8,9 +8,9 @@ namespace Domain.Stores;
 
 public interface IProjectStore
 {
-    Task<Project?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<Project?> GetByIdAsync(int projectId, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<Project>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> projectIdList,
         CancellationToken cancellationToken = default
     );
     Task<(IReadOnlyCollection<T> Items, int TotalCount)> GetPagedAsync<T>(
@@ -22,9 +22,9 @@ public interface IProjectStore
         CancellationToken cancellationToken = default
     );
     Project Create(Project project);
-    Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<int> DeleteAsync(int projectId, CancellationToken cancellationToken = default);
     Task<int> DeleteAsync(
-        IReadOnlyCollection<int> projects,
+        IReadOnlyCollection<int> projectIdList,
         CancellationToken cancellationToken = default
     );
 }

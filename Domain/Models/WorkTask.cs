@@ -11,8 +11,8 @@ public class WorkTask : Entity
 
     public string? Comment { get; set; }
 
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
 
     public int? AuthorId { get; set; }
     public Employee? Author { get; init; }

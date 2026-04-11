@@ -37,19 +37,22 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasColumnName(FirstNameColumn)
             .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.FirstNameMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder
             .Property(e => e.MiddleName)
             .HasColumnName(MiddleNameColumn)
             .HasColumnType(SqlTypes.Text)
-            .HasMaxLength(FieldLimits.Employee.MiddleNameMaxLength);
+            .HasMaxLength(FieldLimits.Employee.MiddleNameMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation);
 
         builder
             .Property(e => e.LastName)
             .HasColumnName(LastNameColumn)
             .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.LastNameMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder
@@ -57,6 +60,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasColumnName(EmailColumn)
             .HasColumnType(SqlTypes.Text)
             .HasMaxLength(FieldLimits.Employee.EmailMaxLength)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder

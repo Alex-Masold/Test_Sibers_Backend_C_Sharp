@@ -20,6 +20,8 @@ public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocu
 
     private const string ProjectIdColumn = $"{Project}_ID";
 
+    private const string ProjectIdIndex = $"IX_{Base}S_{ProjectIdColumn}";
+
     public void Configure(EntityTypeBuilder<ProjectDocument> builder)
     {
         builder.ToTable($"{Base}S");
@@ -36,6 +38,7 @@ public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocu
             .Property(e => e.OriginalFileName)
             .HasColumnName(OriginalFileNameColumn)
             .HasColumnType(SqlTypes.Text)
+            .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
 
         builder
@@ -61,6 +64,7 @@ public class ProjectDocumentConfiguration : IEntityTypeConfiguration<ProjectDocu
             .HasForeignKey(pm => pm.ProjectId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName(ProjectFk);
+
+        builder.HasIndex(d => d.ProjectId).HasDatabaseName(ProjectIdIndex);
     }
 }
-

@@ -58,7 +58,7 @@ public class EmployeeUpdateDtoValidator : AbstractValidator<EmployeeUpdateDto>
                             return true;
                     }
 
-                    bool isExist = await employeeStore.EmailExistAsync(email, ct);
+                    bool isExist = await employeeStore.EmailExistsAsync(email, ct);
 
                     return !isExist;
                 }

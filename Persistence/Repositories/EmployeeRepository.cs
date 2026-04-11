@@ -14,40 +14,43 @@ namespace Persistence.Repositories;
 
 public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
 {
-    public async Task<bool> EmailExistAsync(
+    public async Task<bool> EmailExistsAsync(
         string email,
         CancellationToken cancellationToken = default
     )
     {
-        return await context.Employees.AnyAsync(
-            e => EF.Functions.Collate(e.Email, "NOCASE") == email,
-            cancellationToken
-        );
+        return await context.Employees.AnyAsync(e => e.Email == email, cancellationToken);
     }
 
-    public async Task<bool> EmployeeExistAsync(
-        int id,
+    public async Task<bool> EmployeeExistsAsync(
+        int employeeId,
         CancellationToken cancellationToken = default
     )
     {
-        return await context.Employees.AnyAsync(e => e.Id == id, cancellationToken);
+        return await context.Employees.AnyAsync(e => e.Id == employeeId, cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<int>> GetExistingIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> employeeIdList,
         CancellationToken cancellationToken = default
     )
     {
         return await context
-            .Employees.Where(e => idList.Contains(e.Id))
+            .Employees.Where(e => employeeIdList.Contains(e.Id))
             .Select(e => e.Id)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Employee?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// return the tracked object for updating via UnitOfWork.
+    /// </summary>
+    public async Task<Employee?> GetByIdAsync(
+        int employeeId,
+        CancellationToken cancellationToken = default
+    )
     {
         var employee = await context.Employees.FirstOrDefaultAsync(
-            e => e.Id == id,
+            e => e.Id == employeeId,
             cancellationToken
         );
 
@@ -55,15 +58,15 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
     }
 
     public async Task<IReadOnlyCollection<Employee>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> employeeIdList,
         CancellationToken cancellationToken = default
     )
     {
-        if (idList == null || idList.Count == 0)
+        if (employeeIdList == null || employeeIdList.Count == 0)
             return new List<Employee>();
 
         var employees = await context
-            .Employees.Where(e => idList.Contains(e.Id))
+            .Employees.Where(e => employeeIdList.Contains(e.Id))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
         return employees;
@@ -76,10 +79,7 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
     {
         var employee = await context
             .Employees.AsNoTracking()
-            .SingleOrDefaultAsync(
-                e => EF.Functions.Collate(e.Email, "NOCASE") == email,
-                cancellationToken
-            );
+            .SingleOrDefaultAsync(e => e.Email == email, cancellationToken);
 
         return employee;
     }
@@ -108,18 +108,23 @@ public class EmployeeRepository(ApplicationContext context) : IEmployeeStore
         return createdEmployee.Entity;
     }
 
-    public async Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await context.Employees.Where(e => e.Id == id).ExecuteDeleteAsync(cancellationToken);
-    }
-
     public async Task<int> DeleteAsync(
-        IReadOnlyCollection<int> idList,
+        int employeeId,
         CancellationToken cancellationToken = default
     )
     {
         return await context
-            .Employees.Where(e => idList.Contains(e.Id))
+            .Employees.Where(e => e.Id == employeeId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async Task<int> DeleteAsync(
+        IReadOnlyCollection<int> employeeIdList,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await context
+            .Employees.Where(e => employeeIdList.Contains(e.Id))
             .ExecuteDeleteAsync(cancellationToken);
     }
 }

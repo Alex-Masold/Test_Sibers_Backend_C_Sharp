@@ -20,7 +20,8 @@ public class ProjectService(
     IValidator<ProjectCreateDto> createValidator,
     IValidator<ProjectUpdateDto> updateValidator,
     IValidator<PagedDto> pagedValidator,
-    IUnitOfWork unitOfWork
+    IUnitOfWork unitOfWork,
+    TimeProvider timeProvider
 )
 {
     private async Task<Project> GetProject(int projectId, CancellationToken ct = default)
@@ -32,16 +33,16 @@ public class ProjectService(
     }
 
     private async Task<IReadOnlyCollection<Project>> GetProjects(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> projectIdList,
         CancellationToken ct = default
     )
     {
-        var existingProjects = await projectStore.GetRangeByIdsAsync(idList, ct);
+        var existingProjects = await projectStore.GetRangeByIdsAsync(projectIdList, ct);
 
-        if (existingProjects.Count != idList.Count)
+        if (existingProjects.Count != projectIdList.Count)
         {
             var existingId = existingProjects.Select(p => p.Id).ToList();
-            var nonExistingIds = idList.Where(id => !existingId.Contains(id)).ToList();
+            var nonExistingIds = projectIdList.Where(id => !existingId.Contains(id)).ToList();
             throw new NotFoundException(nameof(Project), nonExistingIds);
         }
 
@@ -97,9 +98,12 @@ public class ProjectService(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var entity = dto.ToEntity();
+        var project = dto.ToEntity();
 
-        var createdProject = projectStore.Create(entity);
+        if (project.StartDate == default)
+            project.StartDate = DateOnly.FromDateTime(timeProvider.GetUtcNow().DateTime);
+        
+        var createdProject = projectStore.Create(project);
         await unitOfWork.SaveChangesAsync(ct);
         return ProjectReadDto.From(createdProject);
     }
@@ -142,14 +146,14 @@ public class ProjectService(
         return deleted;
     }
 
-    public async Task<int> DeleteProjectAsync(
-        IReadOnlyCollection<int> idList,
+    public async Task<int> DeleteProjectsAsync(
+        IReadOnlyCollection<int> projectIdList,
         CancellationToken ct = default
     )
     {
         accessValidator.EnsureDeletePermission();
 
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctIdList = projectIdList.Distinct().ToList();
         await GetProjects(distinctIdList, ct);
 
         return await projectStore.DeleteAsync(distinctIdList, ct);

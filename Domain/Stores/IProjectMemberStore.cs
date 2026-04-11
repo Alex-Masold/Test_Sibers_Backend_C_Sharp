@@ -6,12 +6,12 @@ namespace Domain.Stores;
 
 public interface IProjectMemberStore
 {
-    Task<bool> MemberExistAsync(
+    Task<bool> MemberExistsAsync(
         int projectId,
         int employeeId,
         CancellationToken cancellationToken = default
     );
-    Task<IReadOnlyCollection<(int ProjectId, int EmployeeId)>> MemberExistAsync(
+    Task<IReadOnlyCollection<(int ProjectId, int EmployeeId)>> MembersExistsAsync(
         IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken cancellationToken = default
     );
@@ -21,7 +21,7 @@ public interface IProjectMemberStore
         CancellationToken cancellationToken = default
     );
     Task<IReadOnlyCollection<ProjectMember>> GetRangeByIdsAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken cancellationToken = default
     );
 
@@ -30,16 +30,20 @@ public interface IProjectMemberStore
         int pageSize,
         Expression<Func<ProjectMember, T>> projection,
         ProjectMemberFilter? filter = null,
-        CancellationToken ct = default
+        CancellationToken cancellationToken = default
     );
 
     ProjectMember Create(ProjectMember projectMember);
 
     void CreateRange(IReadOnlyCollection<ProjectMember> projectMembers);
 
-    Task<int> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<int> DeleteAsync(
-        IReadOnlyCollection<int> idList,
+        int projectId,
+        int employeeId,
+        CancellationToken cancellationToken = default
+    );
+    Task<int> DeleteAsync(
+        IReadOnlyCollection<(int ProjectId, int EmployeeId)> pairs,
         CancellationToken cancellationToken = default
     );
 }

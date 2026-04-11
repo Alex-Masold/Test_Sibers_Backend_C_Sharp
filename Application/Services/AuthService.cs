@@ -1,4 +1,4 @@
-using Application.Contracts.LoginContracts;
+using Application.Contracts.AuthContracts;
 using Application.Interfaces;
 using Domain.Exceptions;
 using Domain.Models;
@@ -65,12 +65,12 @@ public class AuthService(
         var employeeId = await GetEmployeeId(refreshToken, ct);
         var employee = await GetEmployee(employeeId, ct);
 
-        await refreshTokenStore.DeleteByTokenAsync(refreshToken, ct);
-
         var newAccessToken = tokenService.GenerateAccessToken(employee);
         var newRefreshToken = tokenService.GenerateRefreshToken();
 
         await refreshTokenStore.SaveAsync(newRefreshToken, employeeId, ct);
+
+        await refreshTokenStore.DeleteByTokenAsync(refreshToken, ct);
         return (newAccessToken, newRefreshToken);
     }
 

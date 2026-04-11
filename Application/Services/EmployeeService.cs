@@ -32,9 +32,9 @@ public class EmployeeService(
         return employee;
     }
 
-    private async Task EmployeeExist(int employeeId, CancellationToken ct = default)
+    private async Task EmployeeExists(int employeeId, CancellationToken ct = default)
     {
-        var exist = await employeeStore.EmployeeExistAsync(employeeId, ct);
+        var exist = await employeeStore.EmployeeExistsAsync(employeeId, ct);
 
         if (!exist)
         {
@@ -42,12 +42,12 @@ public class EmployeeService(
         }
     }
 
-    private async Task<IReadOnlyCollection<int>> EmployeesExist(
-        IReadOnlyCollection<int> idList,
+    private async Task<IReadOnlyCollection<int>> EmployeesExists(
+        IReadOnlyCollection<int> employeeIdList,
         CancellationToken ct = default
     )
     {
-        var distinctIdList = idList.Distinct().ToList();
+        var distinctIdList = employeeIdList.Distinct().ToList();
         var existingEmployeeId = await employeeStore.GetExistingIdsAsync(distinctIdList, ct);
 
         if (existingEmployeeId.Count != distinctIdList.Count)
@@ -68,9 +68,12 @@ public class EmployeeService(
         return EmployeeReadDto.From(employee);
     }
 
-    public async Task<EmployeeReadDto> GetEmployeeByIdAsync(int id, CancellationToken ct = default)
+    public async Task<EmployeeReadDto> GetEmployeeByIdAsync(
+        int employeeId,
+        CancellationToken ct = default
+    )
     {
-        var employee = await GetEmployee(id, ct);
+        var employee = await GetEmployee(employeeId, ct);
 
         return EmployeeReadDto.From(employee);
     }
@@ -147,31 +150,32 @@ public class EmployeeService(
     {
         accessValidator.EnsureDeletePermission(employeeId);
 
-        await EmployeeExist(employeeId, ct);
+        await EmployeeExists(employeeId, ct);
 
-        await refreshTokenStore.DeleteByUserIdAsync(employeeId, ct);
         var deleted = await employeeStore.DeleteAsync(employeeId, ct);
+        await refreshTokenStore.DeleteByUserIdAsync(employeeId, ct);
 
         return deleted;
     }
 
     public async Task<int> DeleteEmployeesAsync(
-        IReadOnlyCollection<int> idList,
+        IReadOnlyCollection<int> employeeIdList,
         CancellationToken ct = default
     )
     {
-        foreach (var id in idList)
+        foreach (var id in employeeIdList)
         {
             accessValidator.EnsureDeletePermission(id);
         }
-        var existingEmployeeIds = await EmployeesExist(idList, ct);
-
-        var cleanupTask = existingEmployeeIds.Select(id =>
-            refreshTokenStore.DeleteByUserIdAsync(id, ct)
-        );
-        await Task.WhenAll(cleanupTask);
+        var existingEmployeeIds = await EmployeesExists(employeeIdList, ct);
 
         var deleted = await employeeStore.DeleteAsync(existingEmployeeIds, ct);
+
+        var cleanupTask = existingEmployeeIds
+            .Select(id => refreshTokenStore.DeleteByUserIdAsync(id, ct))
+            .ToList();
+
+        await Task.WhenAll(cleanupTask);
 
         return deleted;
     }

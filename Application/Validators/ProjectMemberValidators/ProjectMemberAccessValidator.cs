@@ -10,6 +10,10 @@ public class ProjectMemberAccessValidator(ICurrentUserService userService)
 {
     private void ManagePermission(Project project)
     {
+        if (userService.IsDirector)
+        {
+            return;
+        }
         if (userService.Role == Role.Worker)
         {
             throw new AccessDeniedException(
