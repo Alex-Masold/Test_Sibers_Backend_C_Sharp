@@ -7,11 +7,12 @@ public class Employee : Entity
     public required string FirstName { get; set; }
     public string? MiddleName { get; set; }
     public required string LastName { get; set; }
+
     public required string Email { get; set; }
+    public string? PasswordHash { get; set; }
 
     public Role Role { get; set; } = Role.Worker;
 
-    
     private readonly List<WorkTask> _assignedTasks = [];
     private readonly List<WorkTask> _authoredTasks = [];
     private readonly List<Project> _managedProjects = [];
