@@ -7,6 +7,7 @@ using FileService;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Persistence.Data;
+using Persistence.DataContext;
 using RedisService;
 using Scalar.AspNetCore;
 using TokenService;
@@ -66,13 +67,13 @@ using (var scope = app.Services.CreateScope())
     var serviceProvider = scope.ServiceProvider;
     try
     {
-        var context =
-            serviceProvider.GetRequiredService<Persistence.DataContext.ApplicationContext>();
+        var context = serviceProvider.GetRequiredService<ApplicationContext>();
+        var timeProvider = serviceProvider.GetRequiredService<TimeProvider>();
 
         context.Database.Migrate();
         if (app.Environment.IsDevelopment())
         {
-            DbSeeder.Seed(context, app.Services.GetRequiredService<TimeProvider>());
+            DbSeeder.Seed(context, timeProvider);
         }
     }
     catch (Exception ex)

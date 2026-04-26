@@ -1,8 +1,8 @@
 using Application.Contracts;
 using Application.Contracts.TaskContracts;
+using Application.Extensions;
 using Application.Interfaces;
 using Application.Interfaces.Access;
-using Domain.Exceptions;
 using Domain.Filters;
 using Domain.Interfaces;
 using Domain.Models;
@@ -25,42 +25,9 @@ public class TaskService(
     TimeProvider timeProvider
 )
 {
-    private async Task<WorkTask> GetTask(int taskId, CancellationToken ct = default)
-    {
-        var task = await taskStore.GetByIdAsync(taskId, ct);
-        if (task is null)
-            throw new NotFoundException(nameof(WorkTask), taskId);
-        return task;
-    }
-
-    private async Task<IReadOnlyCollection<WorkTask>> GetTasks(
-        IReadOnlyCollection<int> taskIdList,
-        CancellationToken ct = default
-    )
-    {
-        var distinctIdList = taskIdList.Distinct().ToList();
-        var existingTasks = await taskStore.GetRangeByIdsAsync(distinctIdList, ct);
-
-        if (existingTasks.Count != distinctIdList.Count)
-        {
-            var existingIds = existingTasks.Select(t => t.Id).ToList();
-            var nonExistingIds = distinctIdList.Where(id => !existingIds.Contains(id)).ToList();
-            throw new NotFoundException(nameof(WorkTask), nonExistingIds);
-        }
-        return existingTasks;
-    }
-
-    private async Task<Project> GetProject(int projectId, CancellationToken ct = default)
-    {
-        var project = await projectStore.GetByIdAsync(projectId, ct);
-        if (project == null)
-            throw new NotFoundException(nameof(Project), projectId);
-        return project;
-    }
-
     public async Task<TaskReadDto> GetTaskByIdAsync(int taskId, CancellationToken ct = default)
     {
-        var task = await GetTask(taskId, ct);
+        var task = await taskStore.GetOrThrowAsync(taskId, ct);
 
         accessValidator.EnsureReadPermission(task);
 
@@ -109,7 +76,7 @@ public class TaskService(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var project = await GetProject(dto.ProjectId, ct);
+        var project = await projectStore.GetOrThrowAsync(dto.ProjectId, ct);
         accessValidator.EnsureCreatePermission(project);
 
         var task = dto.ToEntity();
@@ -119,7 +86,7 @@ public class TaskService(
         var createdTasksId = taskStore.Create(task).Id;
         await unitOfWork.SaveChangesAsync(ct);
 
-        var createdTask = await GetTask(createdTasksId, ct);
+        var createdTask = await taskStore.GetOrThrowAsync(createdTasksId, ct);
 
         return TaskReadDto.From(createdTask);
     }
@@ -130,7 +97,7 @@ public class TaskService(
         CancellationToken ct = default
     )
     {
-        var task = await GetTask(taskId, ct);
+        var task = await taskStore.GetOrThrowAsync(taskId, ct);
 
         accessValidator.EnsureUpdatePermission(task, dto);
 
@@ -153,10 +120,7 @@ public class TaskService(
 
     public async Task<int> DeleteTaskAsync(int taskId, CancellationToken ct = default)
     {
-        var task = await GetTask(taskId, ct);
-
-        if (userService.IsDirector)
-            return await taskStore.DeleteAsync(taskId, ct);
+        var task = await taskStore.GetOrThrowAsync(taskId, ct);
 
         accessValidator.EnsureDeletePermission(task);
 
@@ -170,7 +134,7 @@ public class TaskService(
     {
         var distinctIdList = taskIdList.Distinct().ToList();
 
-        var tasks = await GetTasks(distinctIdList, ct);
+        var tasks = await taskStore.GetOrThrowAsync(distinctIdList, ct);
         if (userService.IsDirector)
             return await taskStore.DeleteAsync(distinctIdList, ct);
 

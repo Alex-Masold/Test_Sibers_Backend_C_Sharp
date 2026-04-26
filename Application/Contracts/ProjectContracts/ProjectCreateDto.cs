@@ -24,7 +24,7 @@ public record ProjectCreateDto : ICreateDto<Project>
             CompanyOrdering = CompanyOrdering.Trim(),
             CompanyExecuting = CompanyExecuting?.Trim(),
 
-            StartDate = StartDate,
+            StartDate = StartDate == default ? DateOnly.FromDateTime(DateTime.UtcNow) : StartDate,
             EndDate = EndDate,
 
             ManagerId = ManagerId,

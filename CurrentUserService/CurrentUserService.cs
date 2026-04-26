@@ -4,7 +4,7 @@ using Domain.Exceptions;
 using Domain.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace CurrentUserService.Service;
+namespace CurrentUserService.Services;
 
 public class UserService : ICurrentUserService
 {

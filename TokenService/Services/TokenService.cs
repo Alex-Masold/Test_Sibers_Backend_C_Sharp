@@ -29,8 +29,9 @@ public class JwtTokenService(IOptions<JwtSettings> jwtSettings, TimeProvider tim
 
         var now = timeProvider.GetUtcNow();
         var token = new JwtSecurityToken(
-            issuer: jwtSettings.Value.Issuer,     
+            issuer: jwtSettings.Value.Issuer,
             audience: jwtSettings.Value.Audience,
+            notBefore: now.UtcDateTime,
             expires: now.Add(jwtSettings.Value.Expires).UtcDateTime,
             claims: claims,
             signingCredentials: credentials

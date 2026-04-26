@@ -1,11 +1,10 @@
 using Application.Contracts;
 using Application.Contracts.EmployeeContracts;
+using Application.Extensions;
 using Application.Interfaces;
 using Application.Interfaces.Access;
-using Domain.Exceptions;
 using Domain.Filters;
 using Domain.Interfaces;
-using Domain.Models;
 using Domain.Sort;
 using Domain.Sort.Base;
 using Domain.Stores;
@@ -24,46 +23,9 @@ public class EmployeeService(
     IUnitOfWork unitOfWork
 )
 {
-    private async Task<Employee> GetEmployee(int employeeId, CancellationToken ct = default)
-    {
-        var employee = await employeeStore.GetByIdAsync(employeeId, ct);
-        if (employee is null)
-            throw new NotFoundException(nameof(Employee), employeeId);
-        return employee;
-    }
-
-    private async Task EmployeeExists(int employeeId, CancellationToken ct = default)
-    {
-        var exist = await employeeStore.EmployeeExistsAsync(employeeId, ct);
-
-        if (!exist)
-        {
-            throw new NotFoundException(nameof(Employee), employeeId);
-        }
-    }
-
-    private async Task<IReadOnlyCollection<int>> EmployeesExists(
-        IReadOnlyCollection<int> employeeIdList,
-        CancellationToken ct = default
-    )
-    {
-        var distinctIdList = employeeIdList.Distinct().ToList();
-        var existingEmployeeId = await employeeStore.GetExistingIdsAsync(distinctIdList, ct);
-
-        if (existingEmployeeId.Count != distinctIdList.Count)
-        {
-            var nonExistingIds = distinctIdList
-                .Where(id => !existingEmployeeId.Contains(id))
-                .ToList();
-            throw new NotFoundException(nameof(Employee), nonExistingIds);
-        }
-
-        return existingEmployeeId;
-    }
-
     public async Task<EmployeeReadDto> GetMeAsync(CancellationToken ct = default)
     {
-        var employee = await GetEmployee(userService.UserId, ct);
+        var employee = await employeeStore.GetOrThrowAsync(userService.UserId, ct);
 
         return EmployeeReadDto.From(employee);
     }
@@ -73,7 +35,7 @@ public class EmployeeService(
         CancellationToken ct = default
     )
     {
-        var employee = await GetEmployee(employeeId, ct);
+        var employee = await employeeStore.GetOrThrowAsync(employeeId, ct);
 
         return EmployeeReadDto.From(employee);
     }
@@ -119,6 +81,7 @@ public class EmployeeService(
 
         var createdEmployee = employeeStore.Create(employee);
         await unitOfWork.SaveChangesAsync(ct);
+
         return EmployeeReadDto.From(createdEmployee);
     }
 
@@ -128,7 +91,7 @@ public class EmployeeService(
         CancellationToken ct = default
     )
     {
-        var employee = await GetEmployee(employeeId, ct);
+        var employee = await employeeStore.GetOrThrowAsync(employeeId, ct);
 
         accessValidator.EnsureUpdatePermission(employee, dto);
 
@@ -150,7 +113,7 @@ public class EmployeeService(
     {
         accessValidator.EnsureDeletePermission(employeeId);
 
-        await EmployeeExists(employeeId, ct);
+        await employeeStore.EnsureExists(employeeId, ct);
 
         var deleted = await employeeStore.DeleteAsync(employeeId, ct);
         await refreshTokenStore.DeleteByUserIdAsync(employeeId, ct);
@@ -167,15 +130,11 @@ public class EmployeeService(
         {
             accessValidator.EnsureDeletePermission(id);
         }
-        var existingEmployeeIds = await EmployeesExists(employeeIdList, ct);
+        var existingEmployeeIds = await employeeStore.EnsureAllExist(employeeIdList, ct);
 
         var deleted = await employeeStore.DeleteAsync(existingEmployeeIds, ct);
 
-        var cleanupTask = existingEmployeeIds
-            .Select(id => refreshTokenStore.DeleteByUserIdAsync(id, ct))
-            .ToList();
-
-        await Task.WhenAll(cleanupTask);
+        await refreshTokenStore.DeleteByUserIdAsync(employeeIdList, ct);
 
         return deleted;
     }

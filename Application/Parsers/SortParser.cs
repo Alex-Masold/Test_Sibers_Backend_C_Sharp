@@ -12,6 +12,8 @@ public static class SortParser<TField>
             return result;
 
         var stringSortItems = sortQuery.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+        var seen = new HashSet<TField>();
         foreach (var token in stringSortItems)
         {
             var trimmed = token.Trim();
@@ -19,7 +21,10 @@ public static class SortParser<TField>
 
             var normalized = descFlag ? trimmed[1..] : trimmed;
 
-            if (Enum.TryParse<TField>(normalized, ignoreCase: true, out var field))
+            if (
+                Enum.TryParse<TField>(normalized, ignoreCase: true, out var field)
+                && seen.Add(field)
+            )
             {
                 result.Add(new SortItem<TField>(field, descFlag));
             }

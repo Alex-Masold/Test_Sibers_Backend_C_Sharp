@@ -1,8 +1,8 @@
 using Application.Contracts;
 using Application.Contracts.ProjectDocumentContracts;
+using Application.Extensions;
 using Application.Interfaces;
 using Application.Interfaces.Access;
-using Domain.Exceptions;
 using Domain.Interfaces;
 using Domain.Models;
 using Domain.Stores;
@@ -20,29 +20,13 @@ public class ProjectDocumentService(
     IUnitOfWork unitOfWork
 )
 {
-    private async Task<Project> GetProject(int projectId, CancellationToken ct = default)
-    {
-        var project = await projectStore.GetByIdAsync(projectId, ct);
-        if (project == null)
-            throw new NotFoundException(nameof(Project), projectId);
-        return project;
-    }
-
-    private async Task<ProjectDocument> GetDocument(int documentId, CancellationToken ct = default)
-    {
-        var document = await documentStore.GetByIdAsync(documentId, ct);
-        if (document is null)
-            throw new NotFoundException(nameof(ProjectDocument), documentId);
-        return document;
-    }
-
     public async Task<ProjectDocumentReadDto> UploadProjectDocumentAsync(
         int projectId,
         FileUploadDto fileDto,
         CancellationToken ct = default
     )
     {
-        var project = await GetProject(projectId, ct);
+        var project = await projectStore.GetOrThrowAsync(projectId, ct);
 
         accessValidator.EnsureUpdatePermission(project);
 
@@ -77,7 +61,7 @@ public class ProjectDocumentService(
         CancellationToken ct = default
     )
     {
-        var document = await GetDocument(documentId, ct);
+        var document = await documentStore.GetOrThrowAsync(documentId, ct);
 
         await accessValidator.EnsureReadPermission(document.Project, ct);
 
@@ -91,7 +75,7 @@ public class ProjectDocumentService(
         int TotalCount
     )> GetDocumentsAsync(int projectId, PagedDto pagedDto, CancellationToken ct = default)
     {
-        var project = await GetProject(projectId, ct);
+        var project = await projectStore.GetOrThrowAsync(projectId, ct);
 
         var validationResult = await pagedValidator.ValidateAsync(pagedDto, ct);
         if (!validationResult.IsValid)
@@ -112,7 +96,7 @@ public class ProjectDocumentService(
 
     public async Task DeleteDocumentAsync(int documentId, CancellationToken ct = default)
     {
-        var document = await GetDocument(documentId, ct);
+        var document = await documentStore.GetOrThrowAsync(documentId, ct);
         accessValidator.EnsureUpdatePermission(document.Project);
 
         await documentStore.DeleteAsync(documentId, ct);

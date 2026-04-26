@@ -21,4 +21,14 @@ public static class FieldLimits
         public const int TitleMaxLength = 200;
         public const int CommentMaxLength = 1000;
     }
+
+    public static class Password
+    {
+        public const int MinLength = 8;
+        public const int MaxLength = 128;
+        public const string UppercasePattern = @"[A-Z]";
+        public const string LowercasePattern = @"[a-z]";
+        public const string DigitPattern = @"[0-9]";
+        public const string SpecialCharacterPattern = @"[\W_]";
+    }
 }

@@ -1,5 +1,5 @@
 using Application.Interfaces;
-using CurrentUserService.Service;
+using CurrentUserService.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CurrentUserService;

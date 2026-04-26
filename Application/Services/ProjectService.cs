@@ -1,5 +1,6 @@
 using Application.Contracts;
 using Application.Contracts.ProjectContracts;
+using Application.Extensions;
 using Application.Interfaces;
 using Application.Interfaces.Access;
 using Domain.Exceptions;
@@ -20,38 +21,12 @@ public class ProjectService(
     IValidator<ProjectCreateDto> createValidator,
     IValidator<ProjectUpdateDto> updateValidator,
     IValidator<PagedDto> pagedValidator,
-    IUnitOfWork unitOfWork,
-    TimeProvider timeProvider
+    IUnitOfWork unitOfWork
 )
 {
-    private async Task<Project> GetProject(int projectId, CancellationToken ct = default)
-    {
-        var project = await projectStore.GetByIdAsync(projectId, ct);
-        if (project == null)
-            throw new NotFoundException(nameof(Project), projectId);
-        return project;
-    }
-
-    private async Task<IReadOnlyCollection<Project>> GetProjects(
-        IReadOnlyCollection<int> projectIdList,
-        CancellationToken ct = default
-    )
-    {
-        var existingProjects = await projectStore.GetRangeByIdsAsync(projectIdList, ct);
-
-        if (existingProjects.Count != projectIdList.Count)
-        {
-            var existingId = existingProjects.Select(p => p.Id).ToList();
-            var nonExistingIds = projectIdList.Where(id => !existingId.Contains(id)).ToList();
-            throw new NotFoundException(nameof(Project), nonExistingIds);
-        }
-
-        return existingProjects;
-    }
-
     public async Task<ProjectReadDto> GetProjectAsync(int projectId, CancellationToken ct = default)
     {
-        var project = await GetProject(projectId, ct);
+        var project = await projectStore.GetOrThrowAsync(projectId, ct);
 
         await accessValidator.EnsureReadPermission(project, ct);
 
@@ -100,9 +75,6 @@ public class ProjectService(
 
         var project = dto.ToEntity();
 
-        if (project.StartDate == default)
-            project.StartDate = DateOnly.FromDateTime(timeProvider.GetUtcNow().DateTime);
-        
         var createdProject = projectStore.Create(project);
         await unitOfWork.SaveChangesAsync(ct);
         return ProjectReadDto.From(createdProject);
@@ -114,12 +86,14 @@ public class ProjectService(
         CancellationToken ct = default
     )
     {
-        var project = await GetProject(projectId, ct);
+        const string rootContextKey = "ExistingProject";
+
+        var project = await projectStore.GetOrThrowAsync(projectId, ct);
 
         accessValidator.EnsureUpdatePermission(project, dto);
 
         var validationContext = new ValidationContext<ProjectUpdateDto>(dto);
-        validationContext.RootContextData["ExistingProject"] = project;
+        validationContext.RootContextData[rootContextKey] = project;
 
         var validationResult = await updateValidator.ValidateAsync(validationContext, ct);
 
@@ -154,7 +128,7 @@ public class ProjectService(
         accessValidator.EnsureDeletePermission();
 
         var distinctIdList = projectIdList.Distinct().ToList();
-        await GetProjects(distinctIdList, ct);
+        await projectStore.GetOrThrowAsync(distinctIdList, ct);
 
         return await projectStore.DeleteAsync(distinctIdList, ct);
     }

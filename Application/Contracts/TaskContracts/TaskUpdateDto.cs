@@ -58,7 +58,7 @@ public record TaskUpdateDto : IUpdateDto<WorkTask>
 
         if (ProjectId is not null && task.ProjectId != ProjectId)
         {
-            task.ProjectId = (int)ProjectId;
+            task.ProjectId = ProjectId.Value;
             changed = true;
         }
 

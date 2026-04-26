@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Domain.Sort.Base;
-using Persistence.DataContext;
 
 namespace Persistence.Extensions.Sort.Base;
 

@@ -22,7 +22,7 @@ public class ProjectCreateDtoValidator : AbstractValidator<ProjectCreateDto>
 
         RuleFor(x => x.Priority)
             .InclusiveBetween(1, 5)
-            .WithMessage($"The priority  must be between 1 and 5");
+            .WithMessage($"The priority must be between 1 and 5");
 
         RuleFor(dto => dto.CompanyOrdering)
             .NotEmpty()
