@@ -4,7 +4,7 @@ using Domain.Stores;
 
 namespace Application.Extensions;
 
-public static class TaskExtensions
+public static class TaskStoreExtensions
 {
     public static async Task<WorkTask> GetOrThrowAsync(
         this ITaskStore taskStore,
@@ -29,7 +29,7 @@ public static class TaskExtensions
 
         if (existingTasks.Count != distinctIdList.Count)
         {
-            var existingIds = existingTasks.Select(t => t.Id).ToList();
+            var existingIds = existingTasks.Select(t => t.Id).ToHashSet();
             var nonExistingIds = distinctIdList.Where(id => !existingIds.Contains(id)).ToList();
             throw new NotFoundException(nameof(WorkTask), nonExistingIds);
         }
