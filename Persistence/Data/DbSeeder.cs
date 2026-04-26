@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Domain.Models;
 using Persistence.DataContext;
 
@@ -5,13 +6,21 @@ namespace Persistence.Data;
 
 public static class DbSeeder
 {
-    public static void Seed(ApplicationContext context, TimeProvider timeProvider)
+    private const string DefaultPassword = "Password123!";
+
+    public static void Seed(
+        ApplicationContext context,
+        TimeProvider timeProvider,
+        IPasswordService? passwordService = null
+    )
     {
         if (context.Employees.Any())
             return;
 
         var now = timeProvider.GetUtcNow();
         var today = DateOnly.FromDateTime(now.DateTime);
+
+        var passwordHash = passwordService?.HashPassword(DefaultPassword);
 
         // ==============================
         // 1. СОТРУДНИКИ (The Artists)
@@ -25,6 +34,7 @@ public static class DbSeeder
             MiddleName = "Utaite",
             Email = "yuu@villain.com",
             Role = Role.Director,
+            PasswordHash = passwordHash,
         };
 
         // --- MANAGERS ---
@@ -35,6 +45,7 @@ public static class DbSeeder
             MiddleName = "MindBrand",
             Email = "maretu@white.happy",
             Role = Role.Manager,
+            PasswordHash = passwordHash,
         };
 
         var managerKairiki = new Employee
@@ -44,6 +55,7 @@ public static class DbSeeder
             MiddleName = "Venom",
             Email = "kairiki@lemming.ming",
             Role = Role.Manager,
+            PasswordHash = passwordHash,
         };
 
         var managerGhost = new Employee
@@ -53,6 +65,7 @@ public static class DbSeeder
             MiddleName = "Distortion",
             Email = "ghost@honey.home",
             Role = Role.Manager,
+            PasswordHash = passwordHash,
         };
 
         var managerDeco = new Employee
@@ -62,6 +75,7 @@ public static class DbSeeder
             MiddleName = "Streaming",
             Email = "deco27@android.girl",
             Role = Role.Manager,
+            PasswordHash = passwordHash,
         };
 
         // --- WORKERS ---
@@ -72,6 +86,7 @@ public static class DbSeeder
             MiddleName = "Witch",
             Email = "world@execute.me",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerFlower = new Employee
@@ -80,6 +95,7 @@ public static class DbSeeder
             LastName = "Flower",
             Email = "flower@appetite.pleaser",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerKaai = new Employee
@@ -89,6 +105,7 @@ public static class DbSeeder
             MiddleName = "Lagtrain",
             Email = "lost@umbrella.corp",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerGumi = new Employee
@@ -97,6 +114,7 @@ public static class DbSeeder
             LastName = "Gumi",
             Email = "copycat@circus.p",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerRin = new Employee
@@ -106,6 +124,7 @@ public static class DbSeeder
             MiddleName = "Meltdown",
             Email = "rin@lost.ones.weeping",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerLen = new Employee
@@ -115,6 +134,7 @@ public static class DbSeeder
             MiddleName = "Paradichlorobenzene",
             Email = "len@servant.evil",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerLuka = new Employee
@@ -124,6 +144,7 @@ public static class DbSeeder
             MiddleName = "Tarantula",
             Email = "luka@just.be.friends",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerMiku = new Employee
@@ -133,6 +154,7 @@ public static class DbSeeder
             MiddleName = "Disappearance",
             Email = "miku@deep.sea.girl",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerIa = new Employee
@@ -141,6 +163,7 @@ public static class DbSeeder
             LastName = "IA",
             Email = "ia@imaginative.landscape",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var workerUna = new Employee
@@ -150,6 +173,7 @@ public static class DbSeeder
             MiddleName = "Sugar",
             Email = "una@bitter.choco",
             Role = Role.Worker,
+            PasswordHash = passwordHash,
         };
 
         var employees = new List<Employee>

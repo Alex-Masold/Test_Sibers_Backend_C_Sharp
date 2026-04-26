@@ -5,6 +5,7 @@ using CurrentUserService;
 using DotNetEnv;
 using FileService;
 using Microsoft.EntityFrameworkCore;
+using PasswordService;
 using Persistence;
 using Persistence.Data;
 using Persistence.DataContext;
@@ -28,6 +29,7 @@ FileServiceConfiguration.Configure(services);
 JwtConfiguration.Configure(services, configuration, builder.Environment.IsDevelopment());
 RedisConfiguration.Configure(services, configuration);
 PersistenceConfiguration.Configure(services, configuration);
+PasswordConfiguration.Configure(services);
 
 ControllersConfiguration.Configure(services);
 OpenApiConfiguration.Configure(services);
@@ -69,11 +71,12 @@ using (var scope = app.Services.CreateScope())
     {
         var context = serviceProvider.GetRequiredService<ApplicationContext>();
         var timeProvider = serviceProvider.GetRequiredService<TimeProvider>();
+        var passwordService = serviceProvider.GetRequiredService<IdentityPasswordService>();
 
         context.Database.Migrate();
         if (app.Environment.IsDevelopment())
         {
-            DbSeeder.Seed(context, timeProvider);
+            DbSeeder.Seed(context, timeProvider, passwordService);
         }
     }
     catch (Exception ex)

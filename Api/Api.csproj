@@ -21,5 +21,6 @@
     <ProjectReference Include="..\Persistence\Persistence.csproj" />
     <ProjectReference Include="..\RedisService\RedisService.csproj" />
     <ProjectReference Include="..\TokenService\TokenService.csproj" />
+    <ProjectReference Include="..\PasswordService\PasswordService.csproj" />
   </ItemGroup>
 </Project>

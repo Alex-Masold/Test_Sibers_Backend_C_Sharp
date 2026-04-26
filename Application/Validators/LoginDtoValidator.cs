@@ -12,6 +12,7 @@ public class LoginDtoValidator : AbstractValidator<LoginDto>
             .WithMessage("Email is required")
             .EmailAddress()
             .WithMessage("Invalid email format");
+
+        RuleFor(dto => dto.Password).NotEmpty().WithMessage("Password is required");
     }
 }
-

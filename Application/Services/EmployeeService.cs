@@ -19,6 +19,7 @@ public class EmployeeService(
     IValidator<EmployeeCreateDto> createValidator,
     IValidator<EmployeeUpdateDto> updateValidator,
     IValidator<PagedDto> pagedValidator,
+    IPasswordService passwordService,
     ICurrentUserService userService,
     IUnitOfWork unitOfWork
 )
@@ -77,7 +78,7 @@ public class EmployeeService(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var employee = dto.ToEntity();
+        var employee = dto.ToEntity(passwordService.HashPassword(dto.Password));
 
         var createdEmployee = employeeStore.Create(employee);
         await unitOfWork.SaveChangesAsync(ct);

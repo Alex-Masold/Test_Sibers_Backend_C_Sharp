@@ -15,6 +15,7 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
     private const string MiddleNameColumn = $"{Base}_MIDDLE_NAME";
     private const string LastNameColumn = $"{Base}_LAST_NAME";
     private const string EmailColumn = $"{Base}_EMAIL";
+    private const string PasswordHashColumn = $"{Base}_PASSWORD_HASH";
 
     private const string RoleColumn = $"{Base}_ROLE";
 
@@ -62,6 +63,11 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasMaxLength(FieldLimits.Employee.EmailMaxLength)
             .UseCollation(DbConstants.CaseInsensitiveCollation)
             .IsRequired();
+
+        builder
+            .Property(e => e.PasswordHash)
+            .HasColumnName(PasswordHashColumn)
+            .HasColumnType(SqlTypes.Text);
 
         builder
             .Property(e => e.Role)

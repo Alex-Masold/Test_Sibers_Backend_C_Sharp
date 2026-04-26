@@ -3,10 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace PasswordService;
 
-public static class PasswordServiceConfiguration
+public static class PasswordConfiguration
 {
     public static void Configure(IServiceCollection services)
     {
-        services.AddScoped<IPasswordService, IdentityPasswordService>();
+        services.AddSingleton<IPasswordService, IdentityPasswordService>();
     }
 }

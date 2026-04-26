@@ -1,6 +1,7 @@
 using Application.Contracts.AuthContracts;
 using Application.Extensions;
 using Application.Interfaces;
+using Domain.Exceptions;
 using Domain.Stores;
 using FluentValidation;
 
@@ -8,6 +9,7 @@ namespace Application.Services;
 
 public class AuthService(
     IEmployeeStore employeeStore,
+    IPasswordService passwordService,
     IRefreshTokenStore refreshTokenStore,
     ITokenService tokenService,
     IValidator<LoginDto> loginValidator
@@ -23,6 +25,20 @@ public class AuthService(
             throw new ValidationException(validationResult.Errors);
 
         var employee = await employeeStore.GetOrThrowAsync(dto.Email, ct);
+
+        if (
+            employee.PasswordHash is null
+            || !passwordService.VerifyPassword(employee.PasswordHash, dto.Password)
+        )
+        {
+            if (employee is null)
+                passwordService.VerifyPassword(
+                    "$2a$11$dummy.hash.to.prevent.timing.attacks",
+                    dto.Password
+                );
+
+            throw new AuthenticationException("Invalid email or password");
+        }
 
         var accessToken = tokenService.GenerateAccessToken(employee);
         var refreshToken = tokenService.GenerateRefreshToken();

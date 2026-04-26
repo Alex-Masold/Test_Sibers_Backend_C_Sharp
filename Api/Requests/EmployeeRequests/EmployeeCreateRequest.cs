@@ -10,6 +10,7 @@ public record EmployeeCreateRequest
     public required string LastName { get; init; }
 
     public required string Email { get; init; }
+    public required string Password { get; init; }
 
     public required Role Role { get; init; }
 
@@ -20,6 +21,7 @@ public record EmployeeCreateRequest
             MiddleName = MiddleName,
             LastName = LastName,
             Email = Email,
+            Password = Password,
             Role = Role,
         };
 }
