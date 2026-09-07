@@ -1,6 +1,6 @@
 using Application.Contracts.AuthContracts;
-using Application.Validators.EmployeeValidators;
 using Application.Validators.PasswordValidators;
+using Application.Validators.Rules;
 using Domain.Stores;
 using FluentValidation;
 
@@ -10,7 +10,20 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
 {
     public RegisterDtoValidator(IEmployeeStore employeeStore)
     {
-        Include(new EmployeeFieldsValidator(employeeStore));
+        RuleFor(dto => dto.FirstName).ApplyFirstNameRules();
+
+        RuleFor(dto => dto.MiddleName)
+            .ApplyMiddleNameRules()
+            .When(dto => dto.MiddleName is not null);
+
+        RuleFor(dto => dto.LastName)
+            .NotEmpty()
+            .WithMessage("Last name is required")
+            .ApplyLastNameRules();
+
+        RuleFor(dto => dto.Email).ApplyCreatedEmailRules(employeeStore);
+
+        RuleFor(dto => dto.Role).IsInEnum().WithMessage("Invalid role");
 
         RuleFor(dto => dto.Password).SetValidator(new PasswordValidator()!);
 

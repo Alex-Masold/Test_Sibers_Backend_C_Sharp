@@ -1,8 +1,8 @@
-namespace Application.Contracts;
+namespace Application.Contracts.EmployeeContracts;
 
 public record ChangePasswordDto
 {
-    public required string CurrentPassword { get; init; }
+    public string? CurrentPassword { get; init; }
     public required string NewPassword { get; init; }
     public required string ConfirmNewPassword { get; init; }
 }

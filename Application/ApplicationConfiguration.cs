@@ -7,6 +7,7 @@ using Application.Interfaces.Access;
 using Application.Services;
 using Application.Validators;
 using Application.Validators.EmployeeValidators;
+using Application.Validators.EmployeeValidators.ChangeValidators;
 using Application.Validators.PasswordValidators;
 using Application.Validators.ProjectMemberValidators;
 using Application.Validators.ProjectValidators;
@@ -45,6 +46,7 @@ public static class ApplicationConfiguration
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddScoped<IValidator<RegisterDto>, RegisterDtoValidator>();
         services.AddScoped<IValidator<ChangePasswordDto>, ChangePasswordValidator>();
+        services.AddScoped<IValidator<ChangeEmailDto>, ChangeEmailValidator>();
 
         services.AddScoped<IValidator<PagedDto>, PagedDtoValidator>();
         services.AddScoped<IValidator<FileUploadDto>, FileValidator>();

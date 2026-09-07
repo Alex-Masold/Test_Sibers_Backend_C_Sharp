@@ -17,12 +17,12 @@ public class TaskService(
     ITaskStore taskStore,
     IProjectStore projectStore,
     ICurrentUserService userService,
+    TimeProvider timeProvider,
     ITaskAccessValidator accessValidator,
     IValidator<TaskCreateDto> createValidator,
     IValidator<TaskUpdateDto> updateValidator,
     IValidator<PagedDto> pagedValidator,
-    IUnitOfWork unitOfWork,
-    TimeProvider timeProvider
+    IUnitOfWork unitOfWork
 )
 {
     public async Task<TaskReadDto> GetTaskByIdAsync(int taskId, CancellationToken ct = default)
@@ -83,10 +83,10 @@ public class TaskService(
         task.CreatedAt = timeProvider.GetUtcNow();
         task.AuthorId = userService.UserId;
 
-        var createdTasksId = taskStore.Create(task).Id;
+        var createdTasks = taskStore.Create(task);
         await unitOfWork.SaveChangesAsync(ct);
 
-        var createdTask = await taskStore.GetOrThrowAsync(createdTasksId, ct);
+        var createdTask = await taskStore.GetOrThrowAsync(createdTasks.Id, ct);
 
         return TaskReadDto.From(createdTask);
     }

@@ -1,10 +1,11 @@
+using Application.Contracts.EmployeeContracts;
 using Domain.Constants;
 using Domain.Stores;
 using FluentValidation;
 
 namespace Application.Validators.EmployeeValidators;
 
-public class EmployeeFieldsValidator : AbstractValidator<IEmployeeFields>
+public class EmployeeFieldsValidator : AbstractValidator<EmployeeCreateDto>
 {
     private const int FirstNameMaxLength = FieldLimits.Employee.FirstNameMaxLength;
     private const int MiddleNameMaxLength = FieldLimits.Employee.MiddleNameMaxLength;

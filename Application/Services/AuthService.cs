@@ -48,6 +48,8 @@ public class AuthService(
         return (accessToken, refreshToken);
     }
 
+    public async Task Registeration(RegisterDto dto, CancellationToken ct = default) { }
+
     public async Task<(string accessToken, string refreshToken)> RefreshAsync(
         string refreshToken,
         CancellationToken ct = default

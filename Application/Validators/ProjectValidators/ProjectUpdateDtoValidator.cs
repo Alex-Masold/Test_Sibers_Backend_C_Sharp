@@ -36,7 +36,9 @@ public class ProjectUpdateDtoValidator : AbstractValidator<ProjectUpdateDto>
         RuleFor(dto => dto.CompanyExecuting.Value)
             .MaximumLength(CompanyNameMaxLength)
             .WithMessage($"Company Name must not exceed {CompanyNameMaxLength} characters")
-            .When(dto => dto.CompanyExecuting.HasValue && !string.IsNullOrEmpty(dto.CompanyExecuting.Value));
+            .When(dto =>
+                dto.CompanyExecuting.HasValue && !string.IsNullOrEmpty(dto.CompanyExecuting.Value)
+            );
 
         RuleFor(dto => dto.StartDate)
             .GreaterThan(new DateOnly(2000, 1, 1))

@@ -82,7 +82,10 @@ public class TaskController(TaskService service) : ControllerBase
 
     [HttpDelete("{taskId:int}")]
     [Authorize(Roles = "Director, Manager")]
-    public async Task<ActionResult> DeleteTask([FromRoute] int taskId, CancellationToken ct = default)
+    public async Task<ActionResult> DeleteTask(
+        [FromRoute] int taskId,
+        CancellationToken ct = default
+    )
     {
         await service.DeleteTaskAsync(taskId, ct);
 

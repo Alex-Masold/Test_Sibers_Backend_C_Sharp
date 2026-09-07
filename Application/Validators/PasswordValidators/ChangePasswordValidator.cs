@@ -1,4 +1,4 @@
-using Application.Contracts;
+using Application.Contracts.EmployeeContracts;
 using FluentValidation;
 
 namespace Application.Validators.PasswordValidators;
@@ -7,16 +7,17 @@ public class ChangePasswordValidator : AbstractValidator<ChangePasswordDto>
 {
     public ChangePasswordValidator()
     {
-        RuleFor(x => x.CurrentPassword).NotEmpty().WithMessage("Current password is required");
+        RuleFor(dto => dto.NewPassword)
+            .SetValidator(new PasswordValidator())
+            .When(dto => string.IsNullOrEmpty(dto.CurrentPassword));
 
-        RuleFor(x => x.NewPassword).SetValidator(new PasswordValidator());
-
-        RuleFor(x => x.ConfirmNewPassword)
+        RuleFor(dto => dto.ConfirmNewPassword)
             .Equal(x => x.NewPassword)
             .WithMessage("Passwords do not match");
 
-        RuleFor(x => x.NewPassword)
+        RuleFor(dto => dto.NewPassword)
             .NotEqual(x => x.CurrentPassword)
-            .WithMessage("New password must differ from current password");
+            .WithMessage("New password must differ from current password")
+            .When(dto => !string.IsNullOrEmpty(dto.CurrentPassword));
     }
 }

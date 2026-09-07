@@ -17,6 +17,7 @@ namespace Application.Services;
 public class ProjectService(
     IProjectStore projectStore,
     ICurrentUserService userService,
+    TimeProvider timeProvider,
     IProjectAccessValidator accessValidator,
     IValidator<ProjectCreateDto> createValidator,
     IValidator<ProjectUpdateDto> updateValidator,
@@ -74,6 +75,9 @@ public class ProjectService(
             throw new ValidationException(validationResult.Errors);
 
         var project = dto.ToEntity();
+
+        if (project.StartDate == default)
+            project.StartDate = DateOnly.FromDateTime(timeProvider.GetUtcNow().DateTime);
 
         var createdProject = projectStore.Create(project);
         await unitOfWork.SaveChangesAsync(ct);

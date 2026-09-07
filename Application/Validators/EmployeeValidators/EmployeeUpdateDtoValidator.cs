@@ -1,6 +1,6 @@
 using Application.Contracts.EmployeeContracts;
+using Application.Validators.Rules;
 using Domain.Constants;
-using Domain.Models;
 using Domain.Stores;
 using FluentValidation;
 
@@ -12,59 +12,27 @@ public class EmployeeUpdateDtoValidator : AbstractValidator<EmployeeUpdateDto>
     private const int MiddleNameMaxLength = FieldLimits.Employee.MiddleNameMaxLength;
     private const int LastNameMaxLength = FieldLimits.Employee.LastNameMaxLength;
     private const int EmailMaxLength = FieldLimits.Employee.EmailMaxLength;
+    private const string ExistingEmployee = "ExistingEmployee";
 
     public EmployeeUpdateDtoValidator(IEmployeeStore employeeStore)
     {
-        RuleFor(dto => dto.FirstName)
-            .NotEmpty()
-            .WithMessage("First name cannot be empty")
-            .MaximumLength(FirstNameMaxLength)
-            .WithMessage($"First name must not exceed {FirstNameMaxLength} characters")
-            .When(dto => dto.FirstName is not null);
+        RuleFor(dto => dto.FirstName!)
+            .ApplyFirstNameRules("First name cannot be empty")
+            .When(dto => !string.IsNullOrEmpty(dto.FirstName));
 
         RuleFor(dto => dto.MiddleName.Value)
             .MaximumLength(MiddleNameMaxLength)
             .WithMessage($"Middle name must not exceed {MiddleNameMaxLength} characters")
             .When(dto => dto.MiddleName.HasValue && !string.IsNullOrEmpty(dto.MiddleName.Value));
 
-        RuleFor(dto => dto.LastName)
-            .NotEmpty()
-            .WithMessage("Last name cannot be empty")
-            .MaximumLength(LastNameMaxLength)
-            .WithMessage($"Last name must not exceed {LastNameMaxLength} characters")
-            .When(dto => dto.LastName is not null);
+        RuleFor(dto => dto.LastName!)
+            .ApplyLastNameRules("Last name cannot be empty")
+            .When(dto => !string.IsNullOrEmpty(dto.LastName));
 
-        RuleFor(x => x.Email)
+        RuleFor(x => x.Email!)
             .Cascade(CascadeMode.Stop)
-            .EmailAddress()
-            .WithMessage("Invalid email format.")
-            .MaximumLength(EmailMaxLength)
-            .WithMessage($"Email must not exceed {EmailMaxLength} characters")
-            .MustAsync(
-                async (dto, email, context, ct) =>
-                {
-                    if (
-                        context.RootContextData.TryGetValue("ExistingEmployee", out var obj)
-                        && obj is Employee existingEmployee
-                    )
-                    {
-                        if (
-                            string.Equals(
-                                existingEmployee.Email,
-                                email,
-                                StringComparison.OrdinalIgnoreCase
-                            )
-                        )
-                            return true;
-                    }
-
-                    bool isExist = await employeeStore.EmailExistsAsync(email, ct);
-
-                    return !isExist;
-                }
-            )
-            .WithMessage("Email already exists")
-            .When(dto => dto.Email is not null);
+            .ApplyUpdatedEmailRules(employeeStore)
+            .When(dto => !string.IsNullOrEmpty(dto.Email));
 
         RuleFor(dto => dto.Role)
             .IsInEnum()

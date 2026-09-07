@@ -50,6 +50,10 @@ namespace Persistence.Migrations
                         .HasColumnName("EMPLOYEE_MIDDLE_NAME")
                         .UseCollation("NOCASE");
 
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("EMPLOYEE_PASSWORD_HASH");
+
                     b.Property<int>("Role")
                         .HasColumnType("INTEGER")
                         .HasColumnName("EMPLOYEE_ROLE");
