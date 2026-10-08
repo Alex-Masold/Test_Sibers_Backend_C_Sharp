@@ -1,4 +1,5 @@
 using Application.Contracts.ProjectContracts;
+using Application.Validators.Rules;
 using Domain.Constants;
 using Domain.Models;
 using Domain.Stores;
@@ -14,25 +15,16 @@ public class ProjectCreateDtoValidator : AbstractValidator<ProjectCreateDto>
 
     public ProjectCreateDtoValidator(IEmployeeStore employeeStore)
     {
-        RuleFor(dto => dto.Name)
-            .NotEmpty()
-            .WithMessage("Project name is required")
-            .MaximumLength(NameMaxLength)
-            .WithMessage($"Name must not exceed {NameMaxLength} characters");
+        RuleFor(dto => dto.Name).ApplyProjectNameRules();
 
         RuleFor(x => x.Priority)
             .InclusiveBetween(1, 5)
             .WithMessage($"The priority must be between 1 and 5");
 
-        RuleFor(dto => dto.CompanyOrdering)
-            .NotEmpty()
-            .WithMessage("Company ordering is required")
-            .MaximumLength(CompanyNameMaxLength)
-            .WithMessage($"Company Name must not exceed {CompanyNameMaxLength} characters");
+        RuleFor(dto => dto.CompanyOrdering).ApplyCompanyNameRules();
 
         RuleFor(dto => dto.CompanyExecuting)
-            .MaximumLength(CompanyNameMaxLength)
-            .WithMessage($"Company Name must not exceed {CompanyNameMaxLength} characters")
+            .ApplyOptionalCompanyNameRules()
             .When(dto => !string.IsNullOrEmpty(dto.CompanyExecuting));
 
         RuleFor(dto => dto.EndDate)

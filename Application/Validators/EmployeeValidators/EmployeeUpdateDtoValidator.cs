@@ -1,6 +1,7 @@
 using Application.Contracts.EmployeeContracts;
 using Application.Validators.Rules;
 using Domain.Constants;
+using Domain.Models;
 using Domain.Stores;
 using FluentValidation;
 
@@ -21,8 +22,7 @@ public class EmployeeUpdateDtoValidator : AbstractValidator<EmployeeUpdateDto>
             .When(dto => !string.IsNullOrEmpty(dto.FirstName));
 
         RuleFor(dto => dto.MiddleName.Value)
-            .MaximumLength(MiddleNameMaxLength)
-            .WithMessage($"Middle name must not exceed {MiddleNameMaxLength} characters")
+            .ApplyMiddleNameRules()
             .When(dto => dto.MiddleName.HasValue && !string.IsNullOrEmpty(dto.MiddleName.Value));
 
         RuleFor(dto => dto.LastName!)
@@ -31,7 +31,29 @@ public class EmployeeUpdateDtoValidator : AbstractValidator<EmployeeUpdateDto>
 
         RuleFor(x => x.Email!)
             .Cascade(CascadeMode.Stop)
-            .ApplyUpdatedEmailRules(employeeStore)
+            .ApplyEmailRules()
+            .MustAsync(
+                async (dto, email, context, ct) =>
+                {
+                    if (
+                        context.RootContextData.TryGetValue("ExistingEmployee", out var obj)
+                        && obj is Employee existingEmployee
+                    )
+                    {
+                        if (
+                            string.Equals(
+                                existingEmployee.Email,
+                                email,
+                                StringComparison.OrdinalIgnoreCase
+                            )
+                        )
+                            return true;
+                    }
+
+                    return !await employeeStore.EmailExistsAsync(email, ct);
+                }
+            )
+            .WithMessage("Email already exists")
             .When(dto => !string.IsNullOrEmpty(dto.Email));
 
         RuleFor(dto => dto.Role)

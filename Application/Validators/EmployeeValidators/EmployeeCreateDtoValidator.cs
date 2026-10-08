@@ -18,7 +18,11 @@ public class EmployeeCreateDtoValidator : AbstractValidator<EmployeeCreateDto>
 
         RuleFor(dto => dto.LastName).ApplyLastNameRules();
 
-        RuleFor(dto => dto.Email).ApplyCreatedEmailRules(employeeStore);
+        RuleFor(dto => dto.Email)
+            .Cascade(CascadeMode.Stop)
+            .ApplyEmailRules()
+            .MustAsync(async (email, ct) => !await employeeStore.EmailExistsAsync(email, ct))
+            .WithMessage("Email already exists");
 
         RuleFor(dto => dto.Role).IsInEnum().WithMessage("Invalid role");
 

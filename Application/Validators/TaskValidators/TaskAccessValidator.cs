@@ -3,10 +3,12 @@ using Application.Interfaces;
 using Application.Interfaces.Access;
 using Domain.Exceptions;
 using Domain.Models;
+using Domain.Stores;
 
 namespace Application.Validators.TaskValidators;
 
-public class TaskAccessValidator(ICurrentUserService userService) : ITaskAccessValidator
+public class TaskAccessValidator(ICurrentUserService userService, IProjectStore projectStore)
+    : ITaskAccessValidator
 {
     public void EnsureCreatePermission(Project project)
     {
@@ -20,25 +22,26 @@ public class TaskAccessValidator(ICurrentUserService userService) : ITaskAccessV
             throw new AccessDeniedException("Managers can only create tasks in their own projects");
     }
 
-    public void EnsureReadPermission(WorkTask task)
+    public async Task EnsureReadPermission(WorkTask task, CancellationToken ct = default)
     {
         if (!userService.IsDirector)
+            return;
+        if (userService.Role == Role.Manager)
         {
-            if (userService.Role == Role.Manager)
-            {
-                if (task.Project is null)
-                    throw new InvalidOperationException("Task Project must be loaded");
-                if (task.Project.ManagerId != userService.UserId)
-                    throw new AccessDeniedException(
-                        "you do not have permission to view task in this project"
-                    );
-            }
+            var project =
+                task.Project
+                ?? await projectStore.GetByIdAsync(task.ProjectId, ct)
+                ?? throw new NotFoundException(nameof(Project), task.ProjectId);
+            if (project.ManagerId != userService.UserId)
+                throw new AccessDeniedException(
+                    "you do not have permission to view task in this project"
+                );
+        }
 
-            if (userService.Role == Role.Worker)
-            {
-                if (task.ExecutorId != userService.UserId)
-                    throw new AccessDeniedException("You can only view your own tasks");
-            }
+        if (userService.Role == Role.Worker)
+        {
+            if (task.ExecutorId != userService.UserId)
+                throw new AccessDeniedException("You can only view your own tasks");
         }
     }
 

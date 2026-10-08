@@ -42,7 +42,7 @@ public class ProjectUpdateDtoValidator : AbstractValidator<ProjectUpdateDto>
 
         RuleFor(dto => dto.StartDate)
             .GreaterThan(new DateOnly(2000, 1, 1))
-            .WithMessage("StartDate date must be after 2000-01-01")
+            .WithMessage("Start date must be after 2000-01-01")
             .When(dto => dto.StartDate.HasValue);
 
         RuleFor(dto => dto)

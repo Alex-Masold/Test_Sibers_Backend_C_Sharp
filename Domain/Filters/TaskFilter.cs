@@ -16,6 +16,7 @@ public record TaskFilter
 
     public int? AuthorId { get; init; }
     public int? ExecutorId { get; init; }
+    public int? RelatedEmployeeId { get; init; }
     public int? ProjectId { get; init; }
     public int? ProjectManagerId { get; init; }
 }

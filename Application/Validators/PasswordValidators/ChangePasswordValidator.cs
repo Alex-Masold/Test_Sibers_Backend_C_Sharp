@@ -7,9 +7,7 @@ public class ChangePasswordValidator : AbstractValidator<ChangePasswordDto>
 {
     public ChangePasswordValidator()
     {
-        RuleFor(dto => dto.NewPassword)
-            .SetValidator(new PasswordValidator())
-            .When(dto => string.IsNullOrEmpty(dto.CurrentPassword));
+        RuleFor(dto => dto.NewPassword).SetValidator(new PasswordValidator());
 
         RuleFor(dto => dto.ConfirmNewPassword)
             .Equal(x => x.NewPassword)

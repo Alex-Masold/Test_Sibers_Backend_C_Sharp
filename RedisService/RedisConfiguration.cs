@@ -31,5 +31,7 @@ public static class RedisConfiguration
         });
 
         services.AddScoped<IRefreshTokenStore, RefreshTokenRepository>();
+        services.AddScoped<IInvitationStore, InvitationRepository>();
+        services.AddScoped<IPasswordResetTokenStore, PasswordResetTokenRepository>();
     }
 }

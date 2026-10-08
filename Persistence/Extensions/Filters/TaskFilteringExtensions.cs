@@ -36,6 +36,10 @@ internal static class TaskFilteringExtensions
             query = query.Where(t => t.AuthorId == filter.AuthorId.Value);
         if (filter.ExecutorId.HasValue)
             query = query.Where(t => t.ExecutorId == filter.ExecutorId.Value);
+        if (filter.RelatedEmployeeId.HasValue)
+            query = query.Where(t =>
+                t.ExecutorId == filter.RelatedEmployeeId || t.AuthorId == filter.RelatedEmployeeId
+            );
         if (filter.ProjectId.HasValue)
             query = query.Where(t => t.ProjectId == filter.ProjectId.Value);
 

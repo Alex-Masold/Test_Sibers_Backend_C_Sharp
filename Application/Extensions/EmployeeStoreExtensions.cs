@@ -19,19 +19,6 @@ public static class EmployeeStoreExtensions
         return employee;
     }
 
-    public static async Task<Employee> GetOrThrowAsync(
-        this IEmployeeStore employeeStore,
-        string email,
-        CancellationToken ct = default
-    )
-    {
-        var employee = await employeeStore.GetByEmailAsync(email, ct);
-        if (employee is null)
-            throw new NotFoundException(nameof(Employee), email);
-
-        return employee;
-    }
-
     public static async Task EnsureExists(
         this IEmployeeStore employeeStore,
         int employeeId,

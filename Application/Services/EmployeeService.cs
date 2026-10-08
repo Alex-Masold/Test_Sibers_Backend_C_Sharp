@@ -138,14 +138,14 @@ public class EmployeeService(
 
             if (employee.PasswordHash is null)
                 throw new InvalidOperationException(
-                    "Passsword is not set for this account. Please use the registration link."
+                    "Password is not set for this account. Please use the registration link."
                 );
 
             if (!passwordService.VerifyPassword(employee.PasswordHash, dto.CurrentPassword))
                 throw new ValidationException([
                     new FluentValidation.Results.ValidationFailure(
                         nameof(dto.CurrentPassword),
-                        "invalid current password"
+                        "Invalid current password"
                     ),
                 ]);
         }
@@ -183,10 +183,19 @@ public class EmployeeService(
 
         await employeeStore.EnsureExists(employeeId, ct);
 
-        var deleted = await employeeStore.DeleteAsync(employeeId, ct);
-        await refreshTokenStore.DeleteByUserIdAsync(employeeId, ct);
-
-        return deleted;
+        await unitOfWork.BeginTransactionAsync(ct);
+        try
+        {
+            var deleted = await employeeStore.DeleteAsync(employeeId, ct);
+            await refreshTokenStore.DeleteByUserIdAsync(employeeId, ct);
+            await unitOfWork.CommitTransactionAsync(ct);
+            return deleted;
+        }
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
     }
 
     public async Task<int> DeleteEmployeesAsync(
@@ -200,10 +209,18 @@ public class EmployeeService(
         }
         var existingEmployeeIds = await employeeStore.EnsureAllExist(employeeIdList, ct);
 
-        var deleted = await employeeStore.DeleteAsync(existingEmployeeIds, ct);
-
-        await refreshTokenStore.DeleteByUserIdAsync(existingEmployeeIds, ct);
-
-        return deleted;
+        await unitOfWork.BeginTransactionAsync(ct);
+        try
+        {
+            var deleted = await employeeStore.DeleteAsync(existingEmployeeIds, ct);
+            await refreshTokenStore.DeleteByUserIdAsync(existingEmployeeIds, ct);
+            await unitOfWork.CommitTransactionAsync(ct);
+            return deleted;
+        }
+        catch
+        {
+            await unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
     }
 }

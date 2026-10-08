@@ -6,6 +6,7 @@ using Application.Contracts.TaskContracts;
 using Application.Interfaces.Access;
 using Application.Services;
 using Application.Validators;
+using Application.Validators.AuthValidators;
 using Application.Validators.EmployeeValidators;
 using Application.Validators.EmployeeValidators.ChangeValidators;
 using Application.Validators.PasswordValidators;
@@ -43,6 +44,8 @@ public static class ApplicationConfiguration
         services.AddScoped<IValidator<TaskCreateDto>, TaskCreateDtoValidator>();
         services.AddScoped<IValidator<TaskUpdateDto>, TaskUpdateDtoValidator>();
 
+        services.AddScoped<InvitationService>();
+        services.AddScoped<IValidator<InvitationCreateDto>, InvitationCreateDtoValidator>();
         services.AddScoped<IValidator<LoginDto>, LoginDtoValidator>();
         services.AddScoped<IValidator<RegisterDto>, RegisterDtoValidator>();
         services.AddScoped<IValidator<ChangePasswordDto>, ChangePasswordValidator>();

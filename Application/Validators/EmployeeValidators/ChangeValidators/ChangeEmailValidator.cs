@@ -14,7 +14,7 @@ public class ChangeEmailValidator : AbstractValidator<ChangeEmailDto>
             .NotEmpty()
             .WithMessage("New email is required")
             .EmailAddress()
-            .WithMessage("Ivalid email format")
+            .WithMessage("Invalid email format")
             .MaximumLength(FieldLimits.Employee.EmailMaxLength)
             .WithMessage($"Email must not exceed {FieldLimits.Employee.EmailMaxLength} characters")
             .MustAsync(

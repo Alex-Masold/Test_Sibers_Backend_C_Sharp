@@ -1,6 +1,7 @@
 using Api.Requests.AuthRequests;
 using Application.Contracts.AuthContracts;
 using Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using RedisService.Settings;
@@ -33,6 +34,17 @@ public class AuthController(
         Secure = true,
         SameSite = SameSiteMode.None,
     };
+
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register(
+        [FromBody] RegisterRequest request,
+        CancellationToken ct = default
+    )
+    {
+        await authService.RegisterAsync(request.ToDto(), ct);
+        return Ok();
+    }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthReadDto>> Login(

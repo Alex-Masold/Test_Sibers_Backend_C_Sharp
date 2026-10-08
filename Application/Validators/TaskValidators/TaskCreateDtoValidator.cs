@@ -1,4 +1,5 @@
 using Application.Contracts.TaskContracts;
+using Application.Validators.Rules;
 using Domain.Constants;
 using Domain.Stores;
 using FluentValidation;
@@ -13,20 +14,13 @@ public class TaskCreateDtoValidator : AbstractValidator<TaskCreateDto>
 
     public TaskCreateDtoValidator(IProjectMemberStore memberStore)
     {
-        RuleFor(x => x.Title)
-            .NotEmpty()
-            .WithMessage("Title is required")
-            .MaximumLength(TitleMaxLength)
-            .WithMessage($"Title must not exceed {TitleMaxLength} characters");
+        RuleFor(x => x.Title).ApplyTitleRules("Title is required");
 
         RuleFor(x => x.Priority).GreaterThan(0).WithMessage("Priority must be greater than 0");
 
-        RuleFor(x => x.Status).IsInEnum().WithMessage("Invalid task status");
+        RuleFor(x => x.Status).IsInEnum().WithMessage("Invalid task status"); // Оставляем прямо тут
 
-        RuleFor(x => x.Comment)
-            .MaximumLength(CommentMaxLength)
-            .WithMessage($"Comment must not exceed {CommentMaxLength} characters")
-            .When(x => x.Comment is not null);
+        RuleFor(x => x.Comment).ApplyCommentRules().When(x => x.Comment is not null);
 
         RuleFor(x => x.ExecutorId)
             .MustAsync(

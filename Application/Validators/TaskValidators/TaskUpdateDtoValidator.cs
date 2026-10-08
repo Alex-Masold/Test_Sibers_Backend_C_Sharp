@@ -1,4 +1,5 @@
 using Application.Contracts.TaskContracts;
+using Application.Validators.Rules;
 using Domain.Constants;
 using Domain.Models;
 using Domain.Stores;
@@ -14,11 +15,8 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
 
     public TaskUpdateDtoValidator(IProjectStore projectStore, IProjectMemberStore memberStore)
     {
-        RuleFor(dto => dto.Title)
-            .NotEmpty()
-            .WithMessage("Title cannot be empty")
-            .MaximumLength(TitleMaxLength)
-            .WithMessage($"Title must not exceed {TitleMaxLength} characters")
+        RuleFor(dto => dto.Title!)
+            .ApplyTitleRules("Title cannot be empty")
             .When(dto => dto.Title != null);
 
         RuleFor(dto => dto.Priority)
@@ -31,11 +29,7 @@ public class TaskUpdateDtoValidator : AbstractValidator<TaskUpdateDto>
             .WithMessage("Invalid task status")
             .When(dto => dto.Status.HasValue);
 
-        RuleFor(dto => dto.Comment.Value)
-            .MaximumLength(CommentMaxLength)
-            .WithMessage($"Comment must not exceed {CommentMaxLength} characters")
-            .When(dto => dto.Comment.HasValue);
-
+        RuleFor(dto => dto.Comment.Value).ApplyCommentRules().When(dto => dto.Comment.HasValue);
         RuleFor(dto => dto.ProjectId)
             .MustAsync(
                 async (projectId, ct) =>

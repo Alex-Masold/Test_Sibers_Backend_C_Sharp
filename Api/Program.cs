@@ -30,6 +30,7 @@ JwtConfiguration.Configure(services, configuration, builder.Environment.IsDevelo
 RedisConfiguration.Configure(services, configuration);
 PersistenceConfiguration.Configure(services, configuration);
 PasswordConfiguration.Configure(services);
+EmailConfiguration.Configure(services, configuration);
 
 ControllersConfiguration.Configure(services);
 OpenApiConfiguration.Configure(services);

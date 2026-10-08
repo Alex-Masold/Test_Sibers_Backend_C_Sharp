@@ -2,6 +2,7 @@ using Application.Contracts.AuthContracts;
 using Application.Extensions;
 using Application.Interfaces;
 using Domain.Exceptions;
+using Domain.Interfaces;
 using Domain.Stores;
 using FluentValidation;
 
@@ -12,7 +13,10 @@ public class AuthService(
     IPasswordService passwordService,
     IRefreshTokenStore refreshTokenStore,
     ITokenService tokenService,
-    IValidator<LoginDto> loginValidator
+    IInvitationStore invitationStore,
+    IValidator<RegisterDto> registoreValidator,
+    IValidator<LoginDto> loginValidator,
+    IUnitOfWork unitOfWork
 )
 {
     public async Task<(string accessToken, string refreshToken)> LoginAsync(
@@ -24,10 +28,11 @@ public class AuthService(
         if (!validationResult.IsValid)
             throw new ValidationException(validationResult.Errors);
 
-        var employee = await employeeStore.GetOrThrowAsync(dto.Email, ct);
+        var employee = await employeeStore.GetByEmailAsync(dto.Email, ct);
 
         if (
-            employee.PasswordHash is null
+            employee is null
+            || employee.PasswordHash is null
             || !passwordService.VerifyPassword(employee.PasswordHash, dto.Password)
         )
         {
@@ -48,7 +53,36 @@ public class AuthService(
         return (accessToken, refreshToken);
     }
 
-    public async Task Registeration(RegisterDto dto, CancellationToken ct = default) { }
+    public async Task RegisterAsync(RegisterDto dto, CancellationToken ct = default)
+    {
+        var validationResult = await registoreValidator.ValidateAsync(dto, ct);
+
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
+
+        var inviteData = await invitationStore.GetAsync(dto.Token, ct);
+        if (inviteData is null)
+            throw new AuthenticationException("Invitation token is invalid or expired");
+
+        if (await employeeStore.EmailExistsAsync(inviteData.Email, ct))
+        {
+            await invitationStore.DeleteAsync(dto.Token, ct);
+            throw new ValidationException([
+                new FluentValidation.Results.ValidationFailure(
+                    "Email",
+                    "Email already registered."
+                ),
+            ]);
+        }
+
+        var passwordHash = passwordService.HashPassword((dto.Password));
+        var employee = dto.ToEntity((inviteData.Email, inviteData.Role, passwordHash));
+
+        employeeStore.Create(employee);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        await invitationStore.DeleteAsync(dto.Token, ct);
+    }
 
     public async Task<(string accessToken, string refreshToken)> RefreshAsync(
         string refreshToken,

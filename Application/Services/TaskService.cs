@@ -29,7 +29,7 @@ public class TaskService(
     {
         var task = await taskStore.GetOrThrowAsync(taskId, ct);
 
-        accessValidator.EnsureReadPermission(task);
+        await accessValidator.EnsureReadPermission(task, ct);
 
         return TaskReadDto.From(task);
     }
